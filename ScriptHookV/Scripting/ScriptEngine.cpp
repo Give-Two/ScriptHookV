@@ -9,15 +9,15 @@
 #include "..\Utility\General.h"
 #include "..\Hooking\Hooking.h"
 
-struct GlobalTable
-{
+struct GlobalTable {
 	__int64** GlobalBasePtr;
 	__int64* AddressOf(int index) const { return &GlobalBasePtr[index >> 18 & 0x3F][index & 0x3FFFF]; }
 	bool IsInitialised()const { return *GlobalBasePtr != NULL; }
-};	GlobalTable globalTable;
+};	
 
-eGameVersion					g_GameVersion;
-static eGameState * 			gameState;
+GlobalTable		globalTable;
+eGameVersion	g_GameVersion;
+eGameState *	gameState;
 
 bool ScriptEngine::Initialize() {
 
@@ -27,14 +27,14 @@ bool ScriptEngine::Initialize() {
 	// init Direct3d hook
 	if (!g_D3DHook.InitializeHooks())
 	{
-		LOG_ERROR("Failed to initialize Direct3d Hooks");
+		LOG_ERROR("Failed to Initialize Direct3d Hooks");
 		return false;
 	}
 
 	// init Winproc hook
 	if (!InputHook::Initialize()) {
 
-		LOG_ERROR("Failed to initialize InputHook");
+		LOG_ERROR("Failed to Initialize InputHook");
 		return 0;
 	}
 
@@ -75,7 +75,7 @@ bool ScriptEngine::Initialize() {
 	LOG_PRINT("Performing native hooking...");
 	Hooking::Natives();
 
-	LOG_PRINT("Initialing pools...");
+	LOG_PRINT("Initializing pools...");
 	internal::InitPools();
 	
 	ASILoader::Initialize();

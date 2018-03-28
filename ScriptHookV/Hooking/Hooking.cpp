@@ -80,46 +80,50 @@ BOOL Hooking::Natives()
 		&& NativeDetour(0x4EDE34FBADD967A6, &MY_WAIT, &GAME_WAIT)
 ;}
 
-BOOL Hooking::NativeDetour(uint64_t native, PVOID pHandler, PVOID* ppTarget)
+BOOL Hooking::NativeDetour(uint64_t hash, PVOID pHandler, PVOID* ppTarget)
 {
-	auto handler = NativeInvoker::GetNativeHandler(native);
+	auto native = NativeInvoker::NativeInfo(hash);
 
-	if (handler)
+	if (native.NewHash)
 	{
-		*ppTarget = (PVOID*)handler;
+		auto handler = NativeInvoker::GetNativeHandler(native);
+		if (handler)
+		{
+			*ppTarget = (PVOID*)handler;
 
-		if (g_hooks.find(ppTarget) != g_hooks.end()) {
-			LOG_ERROR("Native 0x%I64X is already hooked at '%p'", native, ppTarget);
+			if (g_hooks.find(ppTarget) != g_hooks.end()) {
+				LOG_ERROR("Native 0x%I64X is already hooked at '%p'", native, ppTarget);
+				return TRUE;
+			}
+
+			if (DetourTransactionBegin() != NO_ERROR) return FALSE;
+
+			if (DetourUpdateThread(GetCurrentThread()) != NO_ERROR)
+			{
+				DetourTransactionCommit();
+				return FALSE;
+			}
+
+			PDETOUR_TRAMPOLINE pTrampoline = NULL;
+
+			if (DetourAttachEx(ppTarget, pHandler, &pTrampoline, NULL, NULL) != NO_ERROR)
+			{
+				DetourTransactionCommit();
+				return FALSE;
+			}
+
+			if (DetourTransactionCommit() != NO_ERROR)
+			{
+				DetourTransactionAbort();
+				return FALSE;
+			}
+
+			g_hooks[ppTarget] = pHandler;
+
+			LOG_DEBUG("Hooked Native %s (0x%I64X) at '%p'", native.Name, native.NewHash, ppTarget);
+
 			return TRUE;
 		}
-
-		if (DetourTransactionBegin() != NO_ERROR) return FALSE;
-
-		if (DetourUpdateThread(GetCurrentThread()) != NO_ERROR)
-		{
-			DetourTransactionCommit();
-			return FALSE;
-		}
-
-		PDETOUR_TRAMPOLINE pTrampoline = NULL;
-
-		if (DetourAttachEx(ppTarget, pHandler, &pTrampoline, NULL, NULL) != NO_ERROR)
-		{
-			DetourTransactionCommit();
-			return FALSE;
-		}
-
-		if (DetourTransactionCommit() != NO_ERROR)
-		{
-			DetourTransactionAbort();
-			return FALSE;
-		}
-
-		g_hooks[ppTarget] = pHandler;
-
-		LOG_DEBUG("Hooked Native 0x%I64X at '%p'", native, ppTarget);
-
-		return TRUE;
 	}
 
 	LOG_DEBUG("Failed to find 0x%016llX", native);

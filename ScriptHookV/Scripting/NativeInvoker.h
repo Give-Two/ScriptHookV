@@ -261,9 +261,9 @@ namespace NativeInvoker
 		return Helper::g_Returns.Get<R>();
 	}
 
-	NativeHandler GetNativeHandler(std::uint64_t hash);
+	NativeHandler GetNativeHandler(HashMapStruct native);
 	
-	HashMapStruct NativeInfo(std::uint64_t hash, bool is_newhash);
+	HashMapStruct NativeInfo(std::uint64_t oldHash);
 
 	extern HashMapStruct g_last_native;
 };

@@ -14,53 +14,33 @@ NativeHandler(*pGetNativeHandler)(void*, uint64_t hash) = "48 8D 0D ? ? ? ? 48 8
 
 void(*scrNativeCallContext::SetVectorResults)(scrNativeCallContext *) = "83 79 18 00 48 8B D1 74 4A FF 4A 18"_Scan.as<decltype(SetVectorResults)>();
 
-static const std::unordered_map<std::uint64_t, HashMapStruct> FromNew
-{
-#define X(Name, OldHash, NewHash) { NewHash, { #Name, OldHash, NewHash } },
-#include "HashMapData.h"
-#undef X
-};
-
-static const std::unordered_map<std::uint64_t, HashMapStruct> FromOld
+static const std::unordered_map<std::uint64_t, HashMapStruct> HashMap
 {
 #define X(Name, OldHash, NewHash) { OldHash, { #Name, OldHash, NewHash } },
 #include "HashMapData.h"
 #undef X
 };
 
-HashMapStruct NativeInvoker::NativeInfo(std::uint64_t hash, bool is_newhash)
+HashMapStruct NativeInvoker::NativeInfo(std::uint64_t oldHash)
 {
-	if (is_newhash)
-	{
-		auto findFromNew = FromNew.find(hash);
-
-		if (findFromNew != FromNew.end())
-		{
-			return findFromNew->second;
-		}
+	auto findOldHash = HashMap.find(oldHash);
+	if (findOldHash != HashMap.end())
+	{	
+		return findOldHash->second;
 	}
-	else
-	{
-		auto findFromOld = FromOld.find(hash);
+	
+	LOG_ERROR("Failed to find native 0x%016llX", oldHash);
 
-		if (findFromOld != FromOld.end())
-		{
-			return findFromOld->second;
-		}
-	}
-
-	throw "Native Info Not Found";
+	return { "", oldHash, 0 };
 }
 
-NativeHandler NativeInvoker::GetNativeHandler(std::uint64_t hash)
+NativeHandler NativeInvoker::GetNativeHandler(HashMapStruct native)
 {
-	auto nativeInfo = NativeInfo(hash, false);
-
-	if (nativeInfo.NewHash)
+	if (native.NewHash)
 	{
-		g_last_native = nativeInfo;
+		g_last_native = native;
 		
-        return pGetNativeHandler(NativeRegistrationTable, nativeInfo.NewHash);
+        return pGetNativeHandler(NativeRegistrationTable, native.NewHash);
 	}
 
 	return nullptr;
@@ -68,14 +48,23 @@ NativeHandler NativeInvoker::GetNativeHandler(std::uint64_t hash)
 
 DECLSPEC_NOINLINE void NativeInvoker::Helper::CallNative(scrNativeCallContext *cxt, uint64_t hash)
 {
-	if (auto handler = GetNativeHandler(hash))
-	{
-		handler(cxt);
+	auto native = NativeInfo(hash);
 
-		cxt->FixVectors();
-	}
-	else
+	if (native.NewHash)
 	{
-		throw std::runtime_error(FMT("Failed to find native 0x%016llX", hash));
+		auto handler = NativeInvoker::GetNativeHandler(native);
+
+		if (handler)
+		{
+			handler(cxt);
+
+			cxt->FixVectors();
+		}
+
+		else
+		{
+			LOG_ERROR("Failed to find native handler for 0x%016llX", hash);
+			return;
+		}
 	}
 }

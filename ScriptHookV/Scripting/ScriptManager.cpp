@@ -318,14 +318,8 @@ DLL_EXPORT void nativePush64(UINT64 val)
 
 DLL_EXPORT uint64_t* nativeCall() 
 {
-	if (auto handler = NativeInvoker::GetNativeHandler(g_hash))
-	{
-		handler(&g_context);
-		g_context.FixVectors();
-		return g_Returns.getRawPtr();
-	}
-
-	throw std::runtime_error(FMT("Failed to find native 0x%016llX", g_hash));
+	NativeInvoker::Helper::CallNative(&g_context, g_hash);
+	return g_Returns.getRawPtr();
 }
 
 /* global variables */

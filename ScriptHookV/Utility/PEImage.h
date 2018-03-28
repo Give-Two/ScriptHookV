@@ -16,10 +16,6 @@ namespace Utility {
 
 		bool			Load( const std::string & path );
 
-		//bool			IsSudoHookCompatible();
-
-		//bool			PatchCompatibility();
-
 	private:
 
 		uint64_t		GetDirectoryAddress( int index );
