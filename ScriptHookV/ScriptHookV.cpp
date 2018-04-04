@@ -5,6 +5,7 @@
 #include "DirectX\D3d11Hook.h"
 #include "Utility\Console.h"
 #include "Utility\General.h"
+#include "Utility\Versioning.h"
 
 using namespace Utility;
 
@@ -39,28 +40,52 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 		case DLL_PROCESS_ATTACH: {
 
 			SetOurModuleHanlde(hModule);
-			CloseHandle(CreateThread(NULL, NULL, [](LPVOID) -> DWORD
-			{
 
 #ifdef _CONSOLE
-				GetConsole()->Allocate();
+			GetConsole()->Allocate();
 #endif
-				// Clear LogFile
-				GetLog()->Clean();
+			// Clear LogFile
+			GetLog()->Clean();
 
-				LOG_PRINT("Initializing...");
+			g_GameVersion = GTAVersion::GetInstance().GameVersion();
 
-				Utility::killProcessByName("GTAVLauncher.exe");
-				LOG_DEBUG("Killed GTAVLauncher.exe");
+			if (g_GameVersion > -1)
+			{
+				auto gta5directory = GTAVersion::GetInstance().GameDirectory();
+				auto versionString = GTAVersion::GetInstance().VersionString();
 
-				if (!ScriptEngine::Initialize()) {
-
-					LOG_ERROR("Failed to initialize ScriptEngine");
-					return 0;
+				if (!fileExists((gta5directory + "\\steam_api64.dll").c_str()))
+				{
+					g_GameVersion += 1;
 				}
 
-				return 1;
-			}, NULL, NULL, NULL));
+				LOG_DEBUG("found GTA5 directory %s", gta5directory.c_str());
+				LOG_DEBUG("detected GTA5 version %s (SHV patch %d)", versionString.c_str(), g_GameVersion);
+
+				// incompatible with versions prior to 1.0.1365.1 with current hashmap.
+				if (g_GameVersion < VER_1_0_1365_1_STEAM)
+				{
+					LOG_MESSAGE("ERROR", "Game Version Incompatible");
+					return TRUE;
+				}
+
+				CloseHandle(CreateThread(NULL, NULL, [](LPVOID) -> DWORD
+				{
+					LOG_PRINT("Initializing...");
+
+					Utility::killProcessByName("GTAVLauncher.exe");
+					LOG_DEBUG("Killed GTAVLauncher.exe");
+
+					if (!ScriptEngine::Initialize()) {
+
+						LOG_ERROR("Failed to initialize ScriptEngine");
+						return 0;
+					}
+
+					return 1;
+				}, NULL, NULL, NULL));
+				
+			}
 			break;
 		}
 		case DLL_PROCESS_DETACH: {

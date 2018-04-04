@@ -16,8 +16,8 @@ struct GlobalTable {
 };	
 
 GlobalTable		globalTable;
-eGameVersion	g_GameVersion;
 eGameState *	gameState;
+int				g_GameVersion;
 
 bool ScriptEngine::Initialize() {
 
@@ -37,13 +37,6 @@ bool ScriptEngine::Initialize() {
 		LOG_ERROR("Failed to Initialize InputHook");
 		return 0;
 	}
-
-	// get game Version
-	std::string gtavFolder = Utility::GetRunningExecutableFolder();
-	if (Utility::fileExists((gtavFolder + "\\steam_api64.dll").c_str()))
-	{
-		g_GameVersion = VER_1_0_1365_1_STEAM;
-	}	g_GameVersion = VER_1_0_1365_1_NOSTEAM;
 
 	// Get game state
 	if (auto gameStatePattern = "83 3D ? ? ? ? ? 8A D9 74 0A"_Scan)

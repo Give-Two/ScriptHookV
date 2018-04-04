@@ -39,7 +39,7 @@
 
 extern std::deque<std::function<void()>> g_Stack;
 extern std::uint32_t g_ThreadHash;
-extern eGameVersion g_GameVersion;
+extern int g_GameVersion;
 
 enum eGameOffsets : DWORD
 {

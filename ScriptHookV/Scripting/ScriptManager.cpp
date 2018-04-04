@@ -352,7 +352,7 @@ DLL_EXPORT int worldGetAllPickups(int *arr, int arrSize)
 /* game version */
 DLL_EXPORT eGameVersion getGameVersion() 
 {
-	return g_GameVersion;
+	return static_cast<eGameVersion>(g_GameVersion);
 }
 
 /* misc */

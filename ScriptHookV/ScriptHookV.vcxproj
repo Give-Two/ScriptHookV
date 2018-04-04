@@ -71,6 +71,7 @@
     <ClCompile Include="Utility\General.cpp" />
     <ClCompile Include="Utility\Log.cpp" />
     <ClCompile Include="Utility\PEImage.cpp" />
+    <ClCompile Include="Utility\Versioning.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SDK\inc\enums.h" />
@@ -94,6 +95,7 @@
     <ClInclude Include="Utility\Log.h" />
     <ClInclude Include="Utility\Pattern.h" />
     <ClInclude Include="Utility\PEImage.h" />
+    <ClInclude Include="Utility\Versioning.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
