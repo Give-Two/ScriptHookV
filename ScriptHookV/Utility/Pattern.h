@@ -606,48 +606,6 @@ namespace mem
 		}
 	};
 
-	inline std::uintptr_t get_offset(mem::handle address)
-	{
-		std::uintptr_t new_address = 0ull;
-
-		auto module = mem::module::main();
-
-		if (module.contains(address))
-		{
-			new_address = address.as<std::uintptr_t>() - module.base().as<std::uintptr_t>();
-		}
-
-		return new_address;
-	};
-
-	inline bool compare(const uint8_t* pData, const uint8_t* bMask, const char* sMask)
-	{
-		for (; *sMask; ++sMask, ++pData, ++bMask)
-			if (*sMask == 'x' && *pData != *bMask)
-				return false;
-
-		return *sMask == NULL;
-	}
-
-	inline std::vector<DWORD64> get_string_addresses(std::string str)
-	{
-		std::string currentMask;
-		static auto module = Module();
-		const char* to_scan = str.c_str();
-		for (uint8_t i = 0; i < strlen(to_scan); i++)
-			currentMask += "x";
-		const char* mask = currentMask.c_str();
-		std::vector<DWORD64> foundAddrs;
-		for (uint32_t i = 0; i < module.size(); ++i) {
-			auto address = module.base() + i;
-			if (compare((BYTE*)(address), (BYTE*)to_scan, mask)) {
-				foundAddrs.push_back((address));
-			}
-		}
-
-		return foundAddrs;
-	}
-
 	inline uintptr_t get_multilayer_pointer(uintptr_t base_address, std::vector<DWORD> offsets)
 	{
 		uintptr_t ptr = *(uintptr_t*)(base_address);
