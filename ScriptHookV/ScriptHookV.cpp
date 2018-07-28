@@ -47,12 +47,14 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 			// Clear LogFile
 			GetLog()->Clean();
 
-			g_GameVersion = GTAVersion::GetInstance().GameVersion();
+			auto& versionTool = GTAVersion::GetInstance();
+
+			g_GameVersion = versionTool.GameVersion();
 
 			if (g_GameVersion > -1)
 			{
-				auto gta5directory = GTAVersion::GetInstance().GameDirectory();
-				auto versionString = GTAVersion::GetInstance().VersionString();
+				auto gta5directory = versionTool.GameDirectory();
+				auto versionString = versionTool.VersionString();
 
 				if (!fileExists((gta5directory + "\\steam_api64.dll").c_str()))
 				{
@@ -62,10 +64,11 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 				LOG_DEBUG("found GTA5 directory %s", gta5directory.c_str());
 				LOG_DEBUG("detected GTA5 version %s (SHV patch %d)", versionString.c_str(), g_GameVersion);
 
-				// incompatible with versions prior to 1.0.1365.1 with current hashmap.
-				if (g_GameVersion < VER_1_0_1365_1_STEAM)
+				// incompatible with versions prior to 1.0.1393.0 with current hashmap.
+				if (g_GameVersion < VER_1_0_1493_0_STEAM)
 				{
 					LOG_MESSAGE("ERROR", "Game Version Incompatible");
+					Cleanup();
 					return TRUE;
 				}
 

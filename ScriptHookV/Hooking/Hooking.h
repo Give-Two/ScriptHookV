@@ -10,7 +10,6 @@ namespace Hooking
 	template <typename T>
 	PDETOUR_TRAMPOLINE CreateDetour(T** pTarget, PVOID pHandler, const char *name = nullptr)
 	{
-
 		PVOID* ppTarget = reinterpret_cast<PVOID*>(pTarget);
 		bool unnamed = (!name);
 
