@@ -30,7 +30,7 @@ void handle_exception_ptr(std::exception_ptr exception_ptr)
 	catch (const std::exception& e) 
 	{
 		SwitchToFiber(g_MainFiber);
-		LOG_MESSAGE("ScriptError", FMT("Caught exception [%s]", e.what()));
+		MessageBoxA(NULL, "ScriptError", FMT("Caught exception [%s]", e.what()).c_str(), MB_OK | MB_TOPMOST);
 	}
 }
 
@@ -86,32 +86,32 @@ void Script::Wait( uint32_t time )
 
 void ScriptManagerThread::DoRun() 
 {
-	static bool Pressed[5] = { false };
-
-    if (isKeyPressedOnce(Pressed[0], VK_END))
+	static bool RemoveAllScriptsKey = false;
+    if (isKeyPressedOnce(RemoveAllScriptsKey, VK_END))
     {
       	g_ScriptManagerThread.RemoveAllScripts();
     }
 
+	static bool ReloadModsKey = false;
 	if (g_MainFiber && KeyStateDown(VK_CONTROL))
 	{
-		if (isKeyPressedOnce(Pressed[1], VK_END))
-		{
-			Cleanup();
-		}
-		if (isKeyPressedOnce(Pressed[2], 0x52)) g_ScriptManagerThread.Reset();
+		if (isKeyPressedOnce(ReloadModsKey, 0x52)) g_ScriptManagerThread.Reset();
 	}
-
-    scriptMap thisIterScripts(m_scripts);
-    for (auto & pair : thisIterScripts) { pair.second->Tick(); }
-
-	scriptMap thisIterAdditional(m_additional);
-	for (auto & pair : thisIterScripts) { pair.second->Tick(); }
 
 	while (!g_Stack.empty())
 	{
-		g_Stack.front()();
+		g_Stack.front();
 		g_Stack.pop_front();
+	}
+
+    for (auto & pair : m_scripts) 
+	{ 
+		pair.second->Tick(); 
+	}
+	
+	for (auto & pair : m_additional) 
+	{
+		pair.second->Tick(); 
 	}
 }
 

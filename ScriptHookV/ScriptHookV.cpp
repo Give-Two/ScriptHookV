@@ -13,27 +13,6 @@ std::uint32_t g_ThreadHash = "main_persistent"_joaat;
 
 std::deque<std::function<void()>> g_Stack;
 
-void Cleanup() {
-
-	if ( IsThreadAFiber() )
-	{
-		ConvertFiberToThread();
-		CloseHandle(g_MainFiber);
-	}
-
-	CloseHandle(CreateThread(NULL, NULL, [](LPVOID) -> DWORD 
-	{
-		if (GetConsole()->IsAllocated()) GetConsole()->DeAllocate();
-
-		InputHook::Remove();
-
-		for (auto && pair : g_hooks) Hooking::RemoveDetour(pair.first, pair.second);
-
-		FreeLibraryAndExitThread(Utility::GetOurModuleHandle(), 0); 
-
-	}, NULL, NULL, NULL)); 
-}
-
 BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/ ) {
 
 	switch ( dwReason ) {
@@ -64,11 +43,11 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 				LOG_DEBUG("found GTA5 directory %s", gta5directory.c_str());
 				LOG_DEBUG("detected GTA5 version %s (SHV patch %d)", versionString.c_str(), g_GameVersion);
 
-				// incompatible with versions prior to 1.0.1393.0 with current hashmap.
+				// incompatible with versions prior to 1.0.1493.0 with current hashmap.
 				if (g_GameVersion < VER_1_0_1493_0_STEAM)
 				{
-					LOG_MESSAGE("ERROR", "Game Version Incompatible");
-					Cleanup();
+					MessageBoxA(NULL, "Update to Version 1.0.1493.0", "Game Version Incompatible!",  MB_OK | MB_TOPMOST);
+					FreeLibraryAndExitThread(hModule, 0);
 					return TRUE;
 				}
 
@@ -82,18 +61,16 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 					if (!ScriptEngine::Initialize()) {
 
 						LOG_ERROR("Failed to initialize ScriptEngine");
-						return 0;
+						return TRUE;
 					}
 
-					return 1;
+					return TRUE;
 				}, NULL, NULL, NULL));
 				
 			}
 			break;
 		}
 		case DLL_PROCESS_DETACH: {
-
-			Cleanup();
 			break;
 		}
 	}

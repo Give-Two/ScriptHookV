@@ -41,13 +41,6 @@ extern std::deque<std::function<void()>> g_Stack;
 extern std::uint32_t g_ThreadHash;
 extern int g_GameVersion;
 
-enum eGameOffsets : DWORD
-{
-	Offset_CPed = 0x8,
-	Offset_CPlayerInfo = 0x10b8,
-	Offset_CFrameFlags = 0x1f8,
-};
-
 #define FMT(FM, ...) \
 	(   false \
 		? std::to_string(printf(FM, ##__VA_ARGS__))  \
@@ -77,7 +70,5 @@ std::string string_format(const std::string& format, Args const & ... args)
 	auto res = std::string(buf.get(), buf.get() + size - 1);
 	return res;
 }
-
-void Cleanup();
 
 #endif // __SCRIPT_HOOK__

@@ -84,11 +84,6 @@ namespace Utility {
 		logFile << buff;	
 	}
 
-	void Log::LogMessage(const std::string& title, const std::string& message)
-	{
-		MessageBoxA(NULL, message.c_str(), title.c_str(), MB_OK | MB_SETFOREGROUND | MB_TOPMOST | MB_APPLMODAL);
-	}
-
 	Log * GetLog() {
 
 		return &g_Log;

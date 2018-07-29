@@ -1,7 +1,7 @@
 #include "versioning.h"
 #pragma comment(lib,"Version.lib")
 
-const std::unordered_map<eGameVersion, const char*> versionTable
+constexpr std::pair<eGameVersion, const char*> versionTable[]
 {
 { VER_1_0_335_2_STEAM,  ("1.0.335.2") } ,
 { VER_1_0_350_1_STEAM,  ("1.0.350.1") } ,
@@ -66,19 +66,16 @@ int GTAVersion::ReadVersionString()
 
 const int GTAVersion::GameVersion()
 {
-	gameVersion = -1;
-
 	if (ReadVersionString() == 0)
 	{
-		for (auto& iter : versionTable)
+		for (auto& version : versionTable)
 		{
-			if (VersionString().compare(iter.second) == 0)
+			if (VersionString().compare(version.second) == 0)
 			{
-				gameVersion = iter.first;
-				break;
+				return version.first;
 			}
 		}
 	}
 
-	return gameVersion;
+	return -1;
 }

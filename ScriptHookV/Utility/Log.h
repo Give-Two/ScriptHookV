@@ -2,7 +2,6 @@
 #define __LOG_H__
 
 #include "..\ScriptHookV.h"
-#define LOG_MESSAGE( title, message)	Utility::GetLog()->LogMessage( title, message )
 #define LOG_PRINT( fmt, ...)	Utility::GetLog()->Write( Utility::eLogType::LogTypePrint,	    fmt, ##__VA_ARGS__ )
 #define LOG_DEBUG( fmt, ...)	Utility::GetLog()->Write( Utility::eLogType::LogTypeDebug,	    fmt, ##__VA_ARGS__ )
 #define LOG_WARNING( fmt, ...)	Utility::GetLog()->Write( Utility::eLogType::LogTypeWarning,	fmt, ##__VA_ARGS__ )
@@ -31,8 +30,6 @@ namespace Utility {
 		void				Clean();
 
 		void				Write( eLogType logType, const char * fmt, ... );
-
-		void				LogMessage(const std::string& title, const std::string& message);
 				
 	private:
 
