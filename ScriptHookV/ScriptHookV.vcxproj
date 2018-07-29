@@ -42,7 +42,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)detours\include;$(ProjectDir)DirectX\DirectXTK\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)detours\include;$(ProjectDir)StackWalker\include;$(ProjectDir)DirectX\DirectXTK\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -50,7 +50,7 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(ProjectDir)detours\lib.X64;$(ProjectDir)DirectX\DirectXTK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)detours\lib.X64;$(ProjectDir)StackWalker\lib\Release;$(ProjectDir)DirectX\DirectXTK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>detours.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -67,7 +67,6 @@
     <ClCompile Include="Scripting\NativeInvoker.cpp" />
     <ClCompile Include="Scripting\ScriptEngine.cpp" />
     <ClCompile Include="Scripting\ScriptManager.cpp" />
-    <ClCompile Include="Utility\Console.cpp" />
     <ClCompile Include="Utility\General.cpp" />
     <ClCompile Include="Utility\Log.cpp" />
     <ClCompile Include="Utility\PEImage.cpp" />
@@ -90,7 +89,6 @@
     <ClInclude Include="Scripting\NativeInvoker.h" />
     <ClInclude Include="Scripting\ScriptEngine.h" />
     <ClInclude Include="Scripting\ScriptManager.h" />
-    <ClInclude Include="Utility\Console.h" />
     <ClInclude Include="Utility\General.h" />
     <ClInclude Include="Utility\Log.h" />
     <ClInclude Include="Utility\Pattern.h" />

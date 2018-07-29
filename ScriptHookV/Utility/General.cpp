@@ -115,4 +115,16 @@ namespace Utility {
 	{
 		return Utility::joaatc(string.c_str(), string.size());
 	}
+
+	void playwindowsSound(const char* sound)
+	{
+		char windir[MAX_PATH];
+		const char* delim = "\\";
+		GetWindowsDirectoryA(windir, MAX_PATH);
+		std::string currentPath = windir;
+		currentPath.substr(0, currentPath.find_last_of("\\"));
+		currentPath.append(delim).append("Media").append(delim).append(sound);
+		PlaySoundA(NULL, NULL, SND_NODEFAULT); // cancel the current sound playing
+		PlaySoundA(currentPath.c_str(), NULL, SND_ASYNC | SND_NODEFAULT);
+	}
 }

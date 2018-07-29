@@ -99,15 +99,15 @@ void ScriptEngine::Notification(const std::string& str, bool gxt)
 {
 	g_Stack.push_back([str, gxt]
 	{
-		if (gxt && NativeInvoker::invoke<bool>(0xAC09CA973C564252, str.c_str()))
+		if (gxt && NativeInvoker::invoke<bool>(/*DOES_TEXT_LABEL_EXIST*/0xAC09CA973C564252, str.c_str()))
 		{
-			NativeInvoker::invoke<Void>(0x202709F4C58A0424, str.c_str());
+			NativeInvoker::invoke<Void>(/*_SET_NOTIFICATION_TEXT_ENTRY*/0x202709F4C58A0424, str.c_str());
 			return;
 		}
 		bool IsLongStr = str.length() < 100;
-		NativeInvoker::invoke<Void>(0x202709F4C58A0424, IsLongStr ? "jamyfafi" : "STRING");
+		NativeInvoker::invoke<Void>(/*_SET_NOTIFICATION_TEXT_ENTRY*/0x202709F4C58A0424, IsLongStr ? "jamyfafi" : "STRING");
 		for (std::size_t i = 0; i < str.size(); i += 99)
-			NativeInvoker::invoke<Void>(0x6C188BE134E074AA, str.c_str());
-		NativeInvoker::invoke<int>(0x2ED7843F8F801023, 0, 0);
+			NativeInvoker::invoke<Void>(/*ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME*/0x6C188BE134E074AA, str.c_str());
+		NativeInvoker::invoke<int>(/*_DRAW_NOTIFICATION*/0x2ED7843F8F801023, 0, 0);
 	});
 }

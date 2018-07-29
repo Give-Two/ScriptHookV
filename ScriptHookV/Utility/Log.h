@@ -18,7 +18,6 @@ namespace Utility {
 		LogTypeError,
 	};
 
-	typedef std::map<int32_t, int32_t> intIntMap;
 	typedef std::map<int32_t, std::string> intStringMap;
 
 	class Log {
@@ -37,8 +36,6 @@ namespace Utility {
 
 		const std::string	GetTimeFormatted() const;
 
-
-		intIntMap			logTypeToColorMap;
 		intStringMap		logTypeToFormatMap;
 		bool				firstEntry = true;
 	};

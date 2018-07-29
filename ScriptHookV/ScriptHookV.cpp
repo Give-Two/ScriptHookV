@@ -3,7 +3,6 @@
 #include "Input\InputHook.h"
 #include "Hooking\Hooking.h"
 #include "DirectX\D3d11Hook.h"
-#include "Utility\Console.h"
 #include "Utility\General.h"
 #include "Utility\Versioning.h"
 
@@ -20,9 +19,6 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 
 			SetOurModuleHanlde(hModule);
 
-#ifdef _CONSOLE
-			GetConsole()->Allocate();
-#endif
 			// Clear LogFile
 			GetLog()->Clean();
 

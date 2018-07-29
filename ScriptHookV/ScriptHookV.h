@@ -5,7 +5,6 @@
 #define NOMINMAX
 #endif //NOMINMAX
 #define _DEVBUILD
-//#define _CONSOLE
 
 #include <windows.h>
 #include <stdio.h>

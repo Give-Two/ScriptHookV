@@ -23,7 +23,7 @@ void LoadPlugin(const std::string& asiSearchFolder) {
 			HMODULE module = LoadLibraryA(pluginPath.c_str());
 			if (module) {
 				LOG_PRINT("\tLoaded \"%s\" => 0x%p", fileData.cFileName, module);
-				PlaySound("C:\\WINDOWS\\Media\\ding.wav", NULL, SND_ASYNC);
+				Utility::playwindowsSound("ding.wav");
 			}
 			else {
 				DWORD errorMessageID = ::GetLastError();
@@ -37,7 +37,7 @@ void LoadPlugin(const std::string& asiSearchFolder) {
 					LOG_ERROR("\tFailed to load: %s", message.c_str());
 				}
 				else LOG_ERROR("\tFailed to load");
-				PlaySound("C:\\WINDOWS\\Media\\chord.wav", NULL, SND_ASYNC);
+				Utility::playwindowsSound("chord.wav");
 			}
 
 		} while (FindNextFileA(fileHandle, &fileData));

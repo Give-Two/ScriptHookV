@@ -8,6 +8,35 @@
 #include "..\Hooking\Hooking.h"
 #include "Pools.h"
 
+#include <StackWalker.h>
+#pragma comment(lib, "StackWalker.lib")
+// Specialized stackwalker-output classes
+// Console (printf):
+class StackWalkerToConsole : public StackWalker
+{
+protected:
+	virtual void OnOutput(LPCSTR szText)
+	{
+		std::ofstream LOG;
+
+		std::string fileName = Utility::GetOurModuleFolder() + "\\" + "StackTrace" + ".txt";
+
+		LOG.open(fileName, std::ofstream::out | std::ofstream::app);
+
+		LOG << szText << std::endl;
+
+		LOG.close();
+	}
+};
+
+LONG WINAPI ExpFilter(EXCEPTION_POINTERS* pExp, DWORD /*dwExpCode*/)
+{
+	//StackWalker sw;  // output to default (Debug-Window)
+	StackWalkerToConsole sw; // output to the console
+	sw.ShowCallstack(GetCurrentThread(), pExp->ContextRecord);
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+
 #define DLL_EXPORT __declspec( dllexport )
 
 using namespace NativeInvoker::Helper;
@@ -17,22 +46,6 @@ HANDLE                      g_MainFiber;
 static Script*				currentScript;
 
 /* ####################### SCRIPT #######################*/
-
-void handle_exception_ptr(std::exception_ptr exception_ptr)
-{
-	try 
-	{
-		if (exception_ptr)
-		{
-			std::rethrow_exception(exception_ptr);
-		}
-	}
-	catch (const std::exception& e) 
-	{
-		SwitchToFiber(g_MainFiber);
-		MessageBoxA(NULL, "ScriptError", FMT("Caught exception [%s]", e.what()).c_str(), MB_OK | MB_TOPMOST);
-	}
-}
 
 void Script::Tick() 
 {
@@ -58,16 +71,8 @@ void Script::Tick()
 		{
 			scriptFiber = CreateFiber(NULL, [](LPVOID handler)
 			{
-				std::exception_ptr exception_ptr;
-				try
-				{
-					reinterpret_cast<Script*>(handler)->Run();
-				}
-				catch (...)
-				{
-					SwitchToFiber(g_MainFiber);
-					exception_ptr = std::current_exception();
-				}	handle_exception_ptr(exception_ptr);
+				reinterpret_cast<Script*>(handler)->Run();
+				SwitchToFiber(g_MainFiber);	
 			}, this);
 		}
 	}
@@ -75,7 +80,14 @@ void Script::Tick()
 
 void Script::Run() 
 {
-    callbackFunction();
+	__try
+	{
+		callbackFunction();
+	}
+	__except (ExpFilter(GetExceptionInformation(), GetExceptionCode()))
+	{
+		Wait(0);
+	}
 }
 
 void Script::Wait( uint32_t time ) 
@@ -189,21 +201,25 @@ void ScriptManagerThread::RemoveScript( HMODULE module )
 void ScriptManagerThread::RemoveAllScripts()
 {
 	if (g_MainFiber) SwitchToFiber(g_MainFiber);
-
-	for (auto && pair : m_additional)
-	{
-		RemoveScript(pair.first);
-		FreeLibrary(pair.first);
-	}	m_additional.clear();
-
-    for (auto && pair : m_scripts)
-    {
-        RemoveScript(pair.first);
-		FreeLibrary(pair.first);
-    }	m_scripts.clear();
 	
-	if (std::size(m_scripts) == 0) 
-		PlaySound("C:\\WINDOWS\\Media\\Windows Default.wav", NULL, SND_ASYNC);
+	if (std::size(m_additional) > 0)
+	{
+		for (auto & pair : m_additional)
+		{
+			RemoveScript(pair.first);
+			FreeLibrary(pair.first);
+		}	m_additional.clear();
+	}
+	
+	if (std::size(m_scripts) > 0)
+	{
+		for (auto & pair : m_scripts)
+		{
+			RemoveScript(pair.first);
+			FreeLibrary(pair.first);
+		}	m_scripts.clear();
+		Utility::playwindowsSound("Windows Default.wav");
+	}
 }
 
 /* ####################### EXPORTS #######################*/
