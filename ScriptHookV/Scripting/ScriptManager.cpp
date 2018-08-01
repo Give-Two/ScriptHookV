@@ -86,7 +86,7 @@ void Script::Run()
 	}
 	__except (ExpFilter(GetExceptionInformation(), GetExceptionCode()))
 	{
-		Wait(0);
+		g_ScriptManagerThread.RemoveScript(this->GetCallbackFunction());
 	}
 }
 
@@ -164,38 +164,44 @@ void ScriptManagerThread::AddAdditional(HMODULE module, void(*fn)())
 	}
 }
 
-void ScriptManagerThread::RemoveScript( void( *fn )( ) ) 
+void ScriptManagerThread::RemoveScript(HMODULE module)
+{
+	const std::string name = Utility::GetModuleNameWithoutExtension(module);
+	
+	if (m_additional.size())
+	{
+		auto foundIter = m_additional.find(module);
+		if (foundIter != m_additional.end())
+		{
+			m_additional.erase(foundIter);
+			LOG_PRINT("Removed '%s' additional thread module 0x%p", name.c_str(), module);
+		}
+	}
+	
+	if (m_scripts.size())
+	{
+		auto foundIter = m_scripts.find(module);
+		if (foundIter != m_scripts.end())
+		{
+			m_scripts.erase(foundIter);
+			FreeLibrary(module);
+			ScriptEngine::Notification(FMT("Removed '%s'", name.c_str()));
+			LOG_PRINT("Unregistered script '%s'", name.c_str());
+		}
+	}
+}
+
+void ScriptManagerThread::RemoveScript(void(*fn)()) 
 {
     for ( auto it = m_scripts.begin(); it != m_scripts.end(); it++ ) 
 	{
         auto pair = *it;
-        if ( pair.second->GetCallbackFunction() == fn ) 
+
+		if ( pair.second->GetCallbackFunction() == fn ) 
 		{
-            RemoveScript( pair.first );
+            RemoveScript(pair.first);
         }
     }
-}
-
-void ScriptManagerThread::RemoveScript( HMODULE module ) 
-{
-	const std::string name = Utility::GetModuleNameWithoutExtension(module);
-
-	auto main_script = m_scripts.find(module);
-
-	auto add_script = m_additional.find(module);
-
-	if (add_script != m_additional.end())
-	{
-		m_additional.erase(add_script);
-		LOG_PRINT("Removed '%s' additional thread module 0x%p", name.c_str(), module);
-	}
-
-	if (main_script != m_scripts.end())
-	{
-		m_scripts.erase(main_script);
-		ScriptEngine::Notification(FMT("Removed '%s'", name.c_str()));
-		LOG_PRINT("Unregistered script '%s'", name.c_str());
-	}
 }
 
 void ScriptManagerThread::RemoveAllScripts()
@@ -207,7 +213,6 @@ void ScriptManagerThread::RemoveAllScripts()
 		for (auto & pair : m_additional)
 		{
 			RemoveScript(pair.first);
-			FreeLibrary(pair.first);
 		}	m_additional.clear();
 	}
 	
@@ -216,7 +221,6 @@ void ScriptManagerThread::RemoveAllScripts()
 		for (auto & pair : m_scripts)
 		{
 			RemoveScript(pair.first);
-			FreeLibrary(pair.first);
 		}	m_scripts.clear();
 		Utility::playwindowsSound("Windows Default.wav");
 	}
@@ -347,22 +351,22 @@ DLL_EXPORT UINT64 *getGlobalPtr(int globalId)
 /* world pools */
 DLL_EXPORT int worldGetAllPeds(int *arr, int arrSize) 
 {
-    return internal::worldGetAllPedIntArray(arr, arrSize);
+	return rage::GetAllWorld(PoolTypePed, arrSize, arr);
 }
 
 DLL_EXPORT int worldGetAllVehicles(int *arr, int arrSize) 
 {
-    return internal::worldGetAllVehicleIntArray(arr, arrSize);
+	return rage::GetAllWorld(PoolTypeVehicle, arrSize, arr);
 }
 
 DLL_EXPORT int worldGetAllObjects(int *arr, int arrSize) 
 {
-    return internal::worldGetAllObjectIntArray(arr, arrSize);
+	return rage::GetAllWorld(PoolTypeObject, arrSize, arr);
 }
 
 DLL_EXPORT int worldGetAllPickups(int *arr, int arrSize) 
 {
-    return internal::worldGetAllPickupIntArray(arr, arrSize);
+	return rage::GetAllWorld(PoolTypePickup, arrSize, arr);
 }
 
 /* game version */
