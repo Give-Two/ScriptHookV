@@ -67,9 +67,6 @@ bool ScriptEngine::Initialize() {
 
 	LOG_PRINT("Performing native hooking...");
 	Hooking::Natives();
-
-	LOG_PRINT("Initializing pools...");
-	internal::InitPools();
 	
 	ASILoader::Initialize();
 	

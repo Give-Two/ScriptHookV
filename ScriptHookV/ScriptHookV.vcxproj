@@ -82,7 +82,6 @@
     <ClInclude Include="DirectX\D3d11Hook.h" />
     <ClInclude Include="Hooking\Hooking.h" />
     <ClInclude Include="Input\InputHook.h" />
-    <ClInclude Include="Scripting\dassert.h" />
     <ClInclude Include="Scripting\Pools.h" />
     <ClInclude Include="Scripting\ScriptThread.h" />
     <ClInclude Include="ScriptHookV.h" />
