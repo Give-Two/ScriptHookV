@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScriptHookV", "ScriptHookV\ScriptHookV.vcxproj", "{B77FAE3F-A179-425D-B361-64F125CC3168}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Injector", "ScriptHookV\Injector\Injector.vcxproj", "{B113859C-0C89-47C5-A09D-DAC2DAE84A12}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Release|x64 = Release|x64
@@ -12,6 +14,8 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{B77FAE3F-A179-425D-B361-64F125CC3168}.Release|x64.ActiveCfg = Release|x64
 		{B77FAE3F-A179-425D-B361-64F125CC3168}.Release|x64.Build.0 = Release|x64
+		{B113859C-0C89-47C5-A09D-DAC2DAE84A12}.Release|x64.ActiveCfg = Release|x64
+		{B113859C-0C89-47C5-A09D-DAC2DAE84A12}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

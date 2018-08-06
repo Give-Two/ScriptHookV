@@ -54,8 +54,11 @@
       <AdditionalDependencies>detours.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)Build\$(Configuration)\$(ProjectName).lib" "$(SolutionDir)SDK\lib\" /Y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName).lib" "$(ProjectDir)..\SDK\lib\" /Y</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>if not exist $(OutDir)Asi mkdir $(OutDir)Asi</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ASI Loader\ASILoader.cpp" />
