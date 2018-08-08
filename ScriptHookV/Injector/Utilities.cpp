@@ -118,3 +118,9 @@ bool IsProcessRunning(const char *filename)
 	CloseHandle(hSnapShot);
 	return false;
 }
+
+bool DoesFileExist(const char* name) {
+
+	struct stat buffer;
+	return (stat(name, &buffer) == 0);
+}

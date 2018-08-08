@@ -36,6 +36,12 @@
 #include "..\SDK\inc\types.h"
 #include "..\SDK\inc\enums.h"
 
+template<typename InputType, typename ReturnType>
+InputType RCast(InputType Input, ReturnType Ret)
+{
+	return reinterpret_cast<decltype(Input)>(Ret);
+}
+
 extern std::deque<std::function<void()>> g_Stack;
 extern std::uint32_t g_ThreadHash;
 extern int g_GameVersion;

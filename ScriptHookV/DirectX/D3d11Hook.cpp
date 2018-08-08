@@ -79,37 +79,41 @@ void** GetSwapChainVtable()
 // Function hook stubs
 
 // IDXGISwapChain::Present()
-PVOID m_SwapChainPresentOrig = NULL;
-DETOUR_TRAMPOLINE* m_SwapChainPresentTrampoline;
-LPVOID SwapChainPresentHook(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
+PDETOUR_TRAMPOLINE Present;
+LPVOID Hook_Present(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
 {
-    if (g_D3DHook.GetSwapChain() == nullptr)
+	if (!g_D3DHook.m_IsResizing)
 	{
-		g_D3DHook.SetSwapChain(chain);
-		g_D3DHook.InitializeDevices();
-	}
-	else
-	{
-		if (!g_D3DHook.IsResizing()) g_D3DHook.Draw();
-		else g_D3DHook.SetResizing(windowSize.x != g_D3DHook.GetResolution().x && windowSize.y != g_D3DHook.GetResolution().y);
-		
+		if (g_D3DHook.m_pSwapchain == nullptr)
+		{
+			g_D3DHook.m_pSwapchain = chain;
+			g_D3DHook.InitializeDevices();
+		}
+		else
+		{
+			g_D3DHook.Draw();
+		}
 	}
 
-	return reinterpret_cast<decltype(&SwapChainPresentHook)>(m_SwapChainPresentTrampoline)(chain, SyncInterval, Flags);
+	return RCast(Hook_Present, Present)(chain, SyncInterval, Flags);
 }
 
 // IDXGISwapChain::ResizeBuffers()
-PVOID m_SwapChainResizeBuffersOrig = NULL;
-DETOUR_TRAMPOLINE* m_SwapChainResizeBuffersTrampoline;
-LPVOID SwapChainResizeBuffersHook(IDXGISwapChain *chain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
+PDETOUR_TRAMPOLINE ResizeBuffers;
+LPVOID Hook_ResizeBuffers(IDXGISwapChain *chain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
 {
-	g_D3DHook.SetResizing(true);
+	g_D3DHook.m_IsResizing = true;
 
-	windowSize = Vector2((float)Width, (float)Width);
+	g_D3DHook.m_pRenderTargetTexture->Release();
+	g_D3DHook.m_pRenderTargetView->Release();
+	g_D3DHook.m_pContext->Release();
+	g_D3DHook.m_pDevice->Release();
 
-	LOG_DEBUG("Screen Resized new Resoloution is %u x %u", windowSize.x, windowSize.y);
+	RCast(Hook_ResizeBuffers, ResizeBuffers)(chain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 
-	return reinterpret_cast<decltype(&SwapChainResizeBuffersHook)>(m_SwapChainResizeBuffersTrampoline)(chain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+	g_D3DHook.m_IsResizing = false;
+
+	return nullptr;
 }
 
 //====================================================================================================================================================================
@@ -144,15 +148,15 @@ bool DX11Hook::InitializeHooks()
 	{
 		hD3D11DLL = GetModuleHandle("d3d11.dll");
 		Sleep(100);
-	} while (!hD3D11DLL);
+	}	while (!hD3D11DLL);
 
 	if (auto pVtable = GetSwapChainVtable())
-	{
-		m_SwapChainPresentOrig = pVtable[SC_PRESENT];
-		m_SwapChainPresentTrampoline = Hooking::CreateDetour(&m_SwapChainPresentOrig, &SwapChainPresentHook, "D3D11SwapChainPresent");
+	{	
+		auto p_Present = pVtable[SC_PRESENT];
+		Present = Hooking::CreateDetour(&p_Present, &Hook_Present, "IDXGISwapChainPresent");
 
-		m_SwapChainResizeBuffersOrig = pVtable[SC_RESIZEBUFFERS];
-		m_SwapChainResizeBuffersTrampoline = Hooking::CreateDetour(&m_SwapChainResizeBuffersOrig, &SwapChainResizeBuffersHook, "D3D11SwapChainResizeBuffers");
+		auto p_ResizeBuffers = pVtable[SC_RESIZEBUFFERS];
+		ResizeBuffers = Hooking::CreateDetour(&p_ResizeBuffers, &Hook_ResizeBuffers, "IDXGISwapChainResizeBuffers");
 
 		return true;
 	}

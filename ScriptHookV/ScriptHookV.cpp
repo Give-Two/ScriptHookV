@@ -20,7 +20,8 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 			SetOurModuleHanlde(hModule);
 
 			// Clear LogFile
-			GetLog()->Clean();
+			//GetLog()->Clean();
+			/* now done in the Injector */
 
 			auto& versionTool = GTAVersion::GetInstance();
 

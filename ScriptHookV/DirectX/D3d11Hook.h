@@ -90,20 +90,13 @@ public:
 	void InitializeDevices();
 
 	Vector2 GetResolution();
-	IDXGISwapChain* GetSwapChain() { return m_pSwapchain;}
-	void SetSwapChain(IDXGISwapChain* _swapChain) { m_pSwapchain = _swapChain; }
-
 	int CreateTexture(const char *texFileName);
 	void DrawTexture(int id, int index, int level, int time, float sizeX, float sizeY, float centerX, float centerY, float posX, float posY, float rotation, float screenHeightScaleFactor, float r, float g, float b, float a);
     bool AddCallback(PresentCallback callback) { return m_PresentCallbacks.insert(callback).second; }
     bool RemoveCallback(PresentCallback callback) { return m_PresentCallbacks.erase(callback) != 0; }
-	bool IsResizing() { return m_IsResizing; }
-	void SetResizing(bool value) { m_IsResizing = value; }
-
-private:
 	void CreateTextures();
 	void ReloadTextures();
-protected:
+
 	IDXGISwapChain*				m_pSwapchain = nullptr;
     ID3D11Device*				m_pDevice = nullptr;
     ID3D11DeviceContext*		m_pContext = nullptr;

@@ -44,3 +44,5 @@ bool SetPrivilege(const char * szPrivilege, bool bState = true);
 bool Is64BitProcess(HANDLE hProc);
 
 bool IsProcessRunning(const char *filename);
+
+bool DoesFileExist(const char* name);

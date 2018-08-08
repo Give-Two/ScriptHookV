@@ -70,7 +70,7 @@ PVOID MY_WAIT(scrNativeCallContext *cxt)
 		}
 	}
 	
-	return reinterpret_cast<decltype(&MY_WAIT)>(GAME_WAIT)(cxt);
+	return RCast(MY_WAIT, GAME_WAIT)(cxt);
 }
 
 BOOL Hooking::Natives()

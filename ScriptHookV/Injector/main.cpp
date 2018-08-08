@@ -6,7 +6,6 @@ std::ofstream LOG;
 
 #define BREAK_WITH_ERROR( e ) { LOG <<( FMT("[-] %s. Error=%d", e, GetLastError()) );  LOG.close(); return 0; }
 
-
 int main()
 {
 	/* Configurable Settings */
@@ -57,6 +56,9 @@ int main()
 			else
 			{
 				std::string launcher = reg.GetValue() + "\\GTAVLauncher.exe";
+				if (!DoesFileExist(launcher.c_str()))
+					BREAK_WITH_ERROR("GTAVLauncher.exe not found");
+
 				LOG << FMT(" Starting %s\n", launcher.c_str());
 				startup(launcher.c_str());
 				LOG << (" Waiting for GTA5.exe process to become available...\n");
@@ -86,7 +88,9 @@ int main()
 			if (reg.isRetailKey() == true)
 			{
 				if (!IsProcessRunning("GTAVLauncher.exe"))
+				{
 					BREAK_WITH_ERROR("GTAVLauncher.exe Is no longer running");
+				}
 			}
 			Sleep(100);
 		}
