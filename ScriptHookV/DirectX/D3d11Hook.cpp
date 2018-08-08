@@ -15,7 +15,8 @@ struct ReloadTex { int id; std::wstring name; };
 std::vector<ScriptTex> DrawTextureArray;
 std::vector<ReloadTex> ReloadArray;
 int DrawTextureArrayIndex = 0;
-static Vector2 windowSize;
+static Vector2 windowSize = Vector2();
+static bool windowedState = true;
 
 //====================================================================================================================================================================
 // SwapChain Vtable Lookup
@@ -82,7 +83,11 @@ void** GetSwapChainVtable()
 PDETOUR_TRAMPOLINE Present;
 LPVOID Hook_Present(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
 {
-	if (!g_D3DHook.m_IsResizing)
+	BOOL fullscreenState;
+	chain->GetFullscreenState(&fullscreenState, nullptr);
+	g_D3DHook.m_windowedMode = !fullscreenState;
+
+	if (!g_D3DHook.m_IsResizing && windowedState == g_D3DHook.m_windowedMode)
 	{
 		if (g_D3DHook.m_pSwapchain == nullptr)
 		{
@@ -93,6 +98,15 @@ LPVOID Hook_Present(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
 		{
 			g_D3DHook.Draw();
 		}
+	}
+	else if (windowedState != g_D3DHook.m_windowedMode)
+	{
+		g_D3DHook.m_pRenderTargetTexture->Release();
+		g_D3DHook.m_pRenderTargetView->Release();
+		g_D3DHook.m_pContext->Release();
+		g_D3DHook.m_pDevice->Release();
+
+		windowedState = g_D3DHook.m_windowedMode;
 	}
 
 	return RCast(Hook_Present, Present)(chain, SyncInterval, Flags);
@@ -192,6 +206,7 @@ void DX11Hook::InitializeDevices()
 		}
 
 		windowSize = GetResolution();
+		windowedState = m_windowedMode;
 	}
 }
 
