@@ -57,7 +57,7 @@
       <Command>xcopy "$(OutDir)$(TargetName).lib" "$(ProjectDir)..\SDK\lib\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>if not exist $(OutDir)Asi mkdir $(OutDir)Asi</Command>
+      <Command>if not exist "$(OutDir)Asi" mkdir "$(OutDir)Asi"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
