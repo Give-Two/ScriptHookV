@@ -154,7 +154,6 @@ $RECYCLE.BIN/
 
 # Mac desktop service store files
 .DS_Store
-/SDK/lib/OpenVHook.lib
 *.opendb
 *.db
 packages
