@@ -23,12 +23,15 @@ static bool windowedState = true;
 LRESULT CALLBACK DXGIMsgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(hwnd, uMsg, wParam, lParam); }
 void** GetSwapChainVtable()
 {
-	if (void** pVtable = *(void***)rage::GetGtaSwapChain())
+	if (auto swapchain = rage::GetGtaSwapChain())
 	{
+		void** pVtable = *(void***) swapchain;
+		LOG_DEBUG("Using Games SwapChain");
 		return pVtable;
 	}
 	else
 	{
+		LOG_DEBUG("Using Temp SwapChain");
 		WNDCLASSEXA wc = { sizeof(WNDCLASSEX), CS_CLASSDC, DXGIMsgProc, 0L, 0L, GetModuleHandleA(NULL), NULL, NULL, NULL, NULL, "DX", NULL };
 		RegisterClassExA(&wc);
 		HWND hWnd = CreateWindowA("DX", NULL, WS_OVERLAPPEDWINDOW, 100, 100, 300, 300, NULL, NULL, wc.hInstance, NULL);
@@ -72,7 +75,7 @@ void** GetSwapChainVtable()
 			return NULL;
 		}
 
-		pVtable = *(void***)pTempSwapChain;
+		void** pVtable = *(void***)pTempSwapChain;
 
 		//Unload temporary devices
 		pTempSwapChain->Release();
