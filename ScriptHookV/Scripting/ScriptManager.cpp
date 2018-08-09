@@ -41,9 +41,10 @@ LONG WINAPI ExpFilter(EXCEPTION_POINTERS* pExp, DWORD /*dwExpCode*/)
 
 using namespace NativeInvoker::Helper;
 
-ScriptManagerThread g_ScriptManagerThread;
-HANDLE                      g_MainFiber;
-static Script*				currentScript;
+ScriptThread	g_ScriptThread;
+ScriptThread	g_AdditionalThread;
+HANDLE          g_MainFiber;
+static Script*  currentScript;
 
 /* ####################### SCRIPT #######################*/
 
@@ -86,7 +87,9 @@ void Script::Run()
 	}
 	__except (ExpFilter(GetExceptionInformation(), GetExceptionCode()))
 	{
-		g_ScriptManagerThread.RemoveScript(this->GetCallbackFunction());
+
+		g_AdditionalThread.RemoveScript(this->GetCallbackFunction());
+		g_ScriptThread.RemoveScript(this->GetCallbackFunction());
 	}
 }
 
@@ -96,18 +99,23 @@ void Script::Wait( uint32_t time )
 	if (g_MainFiber) SwitchToFiber(g_MainFiber);
 }
 
-void ScriptManagerThread::DoRun() 
+void ScriptThread::DoRun() 
 {
 	static bool RemoveAllScriptsKey = false;
     if (isKeyPressedOnce(RemoveAllScriptsKey, VK_END))
     {
-      	g_ScriptManagerThread.RemoveAllScripts();
+		g_AdditionalThread.RemoveAllScripts();
+      	g_ScriptThread.RemoveAllScripts();
     }
 
 	static bool ReloadModsKey = false;
 	if (g_MainFiber && KeyStateDown(VK_CONTROL))
 	{
-		if (isKeyPressedOnce(ReloadModsKey, 0x52)) g_ScriptManagerThread.Reset();
+		if (isKeyPressedOnce(ReloadModsKey, 0x52))
+		{
+			g_AdditionalThread.Reset();
+			g_ScriptThread.Reset();
+		}
 	}
 
 	while (!g_Stack.empty())
@@ -120,20 +128,16 @@ void ScriptManagerThread::DoRun()
 	{ 
 		pair.second->Tick(); 
 	}
-	
-	for (auto & pair : m_additional) 
-	{
-		pair.second->Tick(); 
-	}
 }
 
-void ScriptManagerThread::Reset() 
+void ScriptThread::Reset() 
 {
-    g_ScriptManagerThread.RemoveAllScripts();
+	g_AdditionalThread.RemoveAllScripts();
+    g_ScriptThread.RemoveAllScripts();
     ASILoader::Initialize();
 }
 
-void ScriptManagerThread::AddScript( HMODULE module, void( *fn )( ) ) 
+void ScriptThread::AddScript( HMODULE module, void( *fn )( ) ) 
 {
     const std::string moduleName = Utility::GetModuleNameWithoutExtension( module);
 
@@ -149,35 +153,10 @@ void ScriptManagerThread::AddScript( HMODULE module, void( *fn )( ) )
 	}
 }
 
-void ScriptManagerThread::AddAdditional(HMODULE module, void(*fn)()) 
-{
-	const std::string moduleName = Utility::GetModuleNameWithoutExtension(module);
-
-	if (m_additional.find(module) != m_additional.end())
-	{
-		LOG_ERROR("Additional Thread for '%s' is already registered", moduleName.c_str()); return;
-	}
-	else
-	{
-		LOG_PRINT("Registering Additional Thread for '%s' (0x%p)", moduleName.c_str(), fn);
-		m_additional[module] = std::make_shared<Script>(fn);
-	}
-}
-
-void ScriptManagerThread::RemoveScript(HMODULE module)
+void ScriptThread::RemoveScript(HMODULE module)
 {
 	const std::string name = Utility::GetModuleNameWithoutExtension(module);
-	
-	if (m_additional.size())
-	{
-		auto foundIter = m_additional.find(module);
-		if (foundIter != m_additional.end())
-		{
-			m_additional.erase(foundIter);
-			LOG_PRINT("Removed '%s' additional thread module 0x%p", name.c_str(), module);
-		}
-	}
-	
+
 	if (m_scripts.size())
 	{
 		auto foundIter = m_scripts.find(module);
@@ -191,7 +170,7 @@ void ScriptManagerThread::RemoveScript(HMODULE module)
 	}
 }
 
-void ScriptManagerThread::RemoveScript(void(*fn)()) 
+void ScriptThread::RemoveScript(void(*fn)()) 
 {
     for ( auto it = m_scripts.begin(); it != m_scripts.end(); it++ ) 
 	{
@@ -204,17 +183,9 @@ void ScriptManagerThread::RemoveScript(void(*fn)())
     }
 }
 
-void ScriptManagerThread::RemoveAllScripts()
+void ScriptThread::RemoveAllScripts()
 {
 	if (g_MainFiber) SwitchToFiber(g_MainFiber);
-	
-	if (std::size(m_additional) > 0)
-	{
-		for (auto & pair : m_additional)
-		{
-			RemoveScript(pair.first);
-		}	m_additional.clear();
-	}
 	
 	if (std::size(m_scripts) > 0)
 	{
@@ -304,23 +275,25 @@ DLL_EXPORT void scriptWait(DWORD time)
 
 DLL_EXPORT void scriptRegister(HMODULE module, void(*function)())
 {
-    g_ScriptManagerThread.AddScript(module, function);
+    g_ScriptThread.AddScript(module, function);
 }
 
 DLL_EXPORT void scriptRegisterAdditionalThread(HMODULE module, void(*function)()) 
 {
-    g_ScriptManagerThread.AddAdditional(module, function);
+	g_AdditionalThread.AddScript(module, function);
 }
 
 DLL_EXPORT void scriptUnregister(HMODULE module)
 {
-    g_ScriptManagerThread.RemoveScript(module);
+	g_AdditionalThread.RemoveScript(module);
+    g_ScriptThread.RemoveScript(module);
 }
 
 DLL_EXPORT void scriptUnregister(void(*function)()) 
 { 
     // deprecated
-    g_ScriptManagerThread.RemoveScript(function);
+	g_AdditionalThread.RemoveScript(function);
+    g_ScriptThread.RemoveScript(function);
 }
 
 /* natives */

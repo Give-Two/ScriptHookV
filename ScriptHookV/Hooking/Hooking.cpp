@@ -59,18 +59,30 @@ std::uintptr_t normalise_base(mem::handle address)
 PVOID GAME_WAIT = NULL;
 PVOID MY_WAIT(scrNativeCallContext *cxt)
 {
-	if (auto pThread = GetActiveThread())
-	{
-		auto pHash = pThread->ThreadContext.ScriptHash;
-		auto pState = pThread->ThreadContext.State;
+	static scrThread* target_thread = nullptr;
 
-		if (pHash == g_ThreadHash && pState == ThreadStateRunning)
+	scrThread* current_thread = GetActiveThread();
+
+	// do this while script::wait
+	if (target_thread && current_thread->ThreadContext.State == ThreadStateIdle)
+	{
+		if (current_thread->ThreadContext.ScriptHash != g_ThreadHash)
 		{
-			g_ScriptManagerThread.DoRun();
+			SetActiveThread(target_thread);
+			g_AdditionalThread.DoRun();
+			SetActiveThread(current_thread);
 		}
 	}
-	
-	return RCast(MY_WAIT, GAME_WAIT)(cxt);
+	else if (current_thread->ThreadContext.State == ThreadStateRunning)
+	{
+		if (current_thread->ThreadContext.ScriptHash == g_ThreadHash)
+		{
+			if (target_thread == nullptr) target_thread = current_thread;
+			g_ScriptThread.DoRun();
+		}
+	}
+
+	return reinterpret_cast<decltype(&MY_WAIT)>(GAME_WAIT)(cxt);
 }
 
 BOOL Hooking::Natives()

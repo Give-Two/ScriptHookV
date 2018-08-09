@@ -40,3 +40,10 @@ inline scrThread* GetActiveThread()
 	char* moduleTls = *(char**)__readgsqword(88);
 	return *reinterpret_cast<scrThread**>(moduleTls + 2096);
 }
+
+inline void SetActiveThread(scrThread* thread)
+{
+	char* moduleTls = *(char**)__readgsqword(88);
+
+	*reinterpret_cast<scrThread**>(moduleTls + 2096) = thread;
+}
