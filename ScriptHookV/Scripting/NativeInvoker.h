@@ -2,6 +2,7 @@
 #define __NATIVE_INVOKER_H__
 
 #include "..\ScriptHookV.h"
+#include "..\..\SDK\inc\types.h"
 
 struct HashMapStruct
 {

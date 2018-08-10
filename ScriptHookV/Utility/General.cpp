@@ -1,9 +1,10 @@
 #include "General.h"
-#include <Tlhelp32.h>
 
 static HMODULE ourModule;
 
-namespace Utility {
+namespace Utility 
+{
+	/* String */
 
 	std::wstring str_to_wstr(const std::string& string)
 	{
@@ -17,6 +18,26 @@ namespace Utility {
 		std::string string;
 
 		return WideCharToMultiByte(CP_UTF8, 0, wstring.data(), static_cast<int>(wstring.size()), &string[0], static_cast<int>(string.size()), nullptr, nullptr) ? string : std::string();
+	}
+
+	/* Hash */
+
+	std::uint32_t joaat(const char* string)
+	{
+		return joaatc(string, std::strlen(string));
+	}
+
+	std::uint32_t joaat(const std::string& string)
+	{
+		return Utility::joaatc(string.c_str(), string.size());
+	}
+
+	/* File / Folder */
+
+	bool DoesFileExist(const char* name) {
+
+		struct stat buffer;
+		return (stat(name, &buffer) == 0);
 	}
 
 	const std::string GetRunningExecutableFolder() {
@@ -35,6 +56,18 @@ namespace Utility {
 
 		std::string currentPath = fileName;
 		return currentPath.substr(0, currentPath.find_last_of("\\"));
+	}
+
+	/* Module / Process Related */
+
+	void SetOurModuleHandle(const HMODULE module) {
+
+		ourModule = module;
+	}
+
+	const HMODULE GetOurModuleHandle() {
+
+		return ourModule;
 	}
 
 	const std::string GetModuleName(const HMODULE module) {
@@ -60,20 +93,60 @@ namespace Utility {
 		return fileNameWithExtension.substr(0, lastIndex);
 	}
 
-	void SetOurModuleHanlde(const HMODULE module) {
+	DWORD GetProcessIDByName(const std::string& processName)
+	{
+		PROCESSENTRY32 processInfo;
+		processInfo.dwSize = sizeof(processInfo);
 
-		ourModule = module;
+		HANDLE processesSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+		if (processesSnapshot == INVALID_HANDLE_VALUE)
+			return 0;
+
+		Process32First(processesSnapshot, &processInfo);
+		if (!processName.compare(processInfo.szExeFile))
+		{
+			CloseHandle(processesSnapshot);
+			return processInfo.th32ProcessID;
+		}
+
+		while (Process32Next(processesSnapshot, &processInfo))
+		{
+			if (!processName.compare(processInfo.szExeFile))
+			{
+				CloseHandle(processesSnapshot);
+				return processInfo.th32ProcessID;
+			}
+		}
+
+		CloseHandle(processesSnapshot);
+		return 0;
 	}
 
-	const HMODULE GetOurModuleHandle() {
+	void Startup(LPCTSTR lpApplicationName)
+	{
+		// additional information
+		STARTUPINFO si;
+		PROCESS_INFORMATION pi;
 
-		return ourModule;
-	}
+		// set the size of the structures
+		ZeroMemory(&si, sizeof(si));
+		si.cb = sizeof(si);
+		ZeroMemory(&pi, sizeof(pi));
 
-	bool fileExists(const char* name) {
-
-		struct stat buffer;
-		return (stat(name, &buffer) == 0);
+		// start the program up
+		CreateProcess(lpApplicationName,   // the path
+			NULL,        // Command line
+			NULL,           // Process handle not inheritable
+			NULL,           // Thread handle not inheritable
+			FALSE,          // Set handle inheritance to FALSE
+			0,              // No creation flags
+			NULL,           // Use parent's environment block
+			NULL,           // Use parent's starting directory 
+			&si,            // Pointer to STARTUPINFO structure
+			&pi);           // Pointer to PROCESS_INFORMATION structure
+							// Close process and thread handles. 
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
 	}
 
 	void create_thread(LPTHREAD_START_ROUTINE thread)
@@ -106,15 +179,69 @@ namespace Utility {
 		CloseHandle(hSnapShot);
 	}
 
-	std::uint32_t joaat(const char* string)
+	bool SetPrivilege(const char * szPrivilege, bool bState)
 	{
-		return joaatc(string, std::strlen(string));
+		HANDLE hToken = nullptr;
+		if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &hToken))
+			return false;
+
+		TOKEN_PRIVILEGES TokenPrivileges = { 0 };
+		TokenPrivileges.PrivilegeCount = 1;
+		TokenPrivileges.Privileges[0].Attributes = bState ? SE_PRIVILEGE_ENABLED : 0;
+
+		if (!LookupPrivilegeValueA(nullptr, szPrivilege, &TokenPrivileges.Privileges[0].Luid))
+		{
+			CloseHandle(hToken);
+			return false;
+		}
+
+		if (!AdjustTokenPrivileges(hToken, FALSE, &TokenPrivileges, sizeof(TOKEN_PRIVILEGES), nullptr, nullptr))
+		{
+			CloseHandle(hToken);
+			return false;
+		}
+
+		CloseHandle(hToken);
+
+		return true;
 	}
 
-	std::uint32_t joaat(const std::string& string)
+	bool Is64BitProcess(HANDLE hProc)
 	{
-		return Utility::joaatc(string.c_str(), string.size());
+		bool Is64BitWin = false;
+		BOOL Out = 0;
+		IsWow64Process(GetCurrentProcess(), &Out);
+		if (Out)
+			Is64BitWin = true;
+
+		if (!IsWow64Process(hProc, &Out))
+			return false;
+
+		if (Is64BitWin && !Out)
+			return true;
+
+		return false;
 	}
+
+	bool IsProcessRunning(const char *filename)
+	{
+		HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, NULL);
+		PROCESSENTRY32 pEntry;
+		pEntry.dwSize = sizeof(pEntry);
+		BOOL hRes = Process32First(hSnapShot, &pEntry);
+		while (hRes)
+		{
+			if (strcmp(pEntry.szExeFile, filename) == 0)
+			{
+				return true;
+			}
+			hRes = Process32Next(hSnapShot, &pEntry);
+		}
+		CloseHandle(hSnapShot);
+		return false;
+	}
+
+	/* General Misc */
 
 	void playwindowsSound(const char* sound)
 	{

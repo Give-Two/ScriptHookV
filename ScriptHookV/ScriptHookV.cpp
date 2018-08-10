@@ -1,3 +1,4 @@
+#include "..\SDK\inc\enums.h"
 #include "Scripting\ScriptEngine.h"
 #include "Scripting\ScriptManager.h"
 #include "Input\InputHook.h"
@@ -18,7 +19,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 	{
 		case DLL_PROCESS_ATTACH: 
 		{
-			SetOurModuleHanlde(hModule);
+			SetOurModuleHandle(hModule);
 
 			// no launcher check
 			if (auto p_launcherCheck = "E8 ? ? ? ? 84 C0 75 0C B2 01 B9 2F"_Scan) p_launcherCheck.nop(21);
@@ -30,10 +31,6 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 			// this doesn't save any loadup time just plays nothing
 			//if (auto p_preMovie = "70 6C 61 74 66 6F 72 6D 3A 2F 6D 6F 76"_Scan) p_preMovie.nop(13);
 
-			// Clear LogFile
-			//GetLog()->Clean();
-			/* now done in the Injector */
-
 			auto& versionTool = GTAVersion::GetInstance();
 
 			g_GameVersion = versionTool.GameVersion();
@@ -43,7 +40,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 				auto gta5directory = versionTool.GameDirectory();
 				auto versionString = versionTool.VersionString();
 
-				if (!fileExists((gta5directory + "\\steam_api64.dll").c_str()))
+				if (!DoesFileExist((gta5directory + "\\steam_api64.dll").c_str()))
 				{
 					g_GameVersion += 1;
 				}

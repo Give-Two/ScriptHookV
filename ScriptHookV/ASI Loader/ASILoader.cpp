@@ -1,5 +1,4 @@
 #include "ASILoader.h"
-#include "..\ScriptHookV.h"
 #include "..\Utility\Log.h"
 #include "..\Utility\General.h"
 #include "..\Utility\PEImage.h"

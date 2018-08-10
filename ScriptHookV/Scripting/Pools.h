@@ -1,5 +1,5 @@
 #pragma once
-
+#include "..\..\SDK\inc\types.h"
 #include "..\ScriptHookV.h"
 
 enum EntityPoolType : uint16_t

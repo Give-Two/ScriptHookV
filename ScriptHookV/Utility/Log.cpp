@@ -3,7 +3,7 @@
 
 #include <time.h>
 
-const std::string fileName = "ScriptHookV.log";
+const std::string fileName = "ScriptHookV";
 
 namespace Utility 
 {
@@ -19,25 +19,6 @@ namespace Utility
 
 	Log::~Log()	{}
 
-	void Log::Clean()
-	{
-		remove((GetOurModuleFolder() + "\\" + fileName).c_str());
-	}
-
-	void Log::Write( eLogType logType, const char * fmt, ... ) 
-	{
-		char buf[2048] = { 0 };
-		va_list va_alist;
-
-		va_start( va_alist, fmt );
-		vsprintf_s( buf, fmt, va_alist );
-		va_end( va_alist );
-
-		char buff2[2048] = { 0 };
-		sprintf_s( buff2, "%s%s %s\n", GetTimeFormatted().c_str(), logTypeToFormatMap[logType].c_str(), buf );
-		LogToFile( buff2 );
-	}
-
 	const std::string Log::GetTimeFormatted() const
 	{
 		struct tm timeStruct;
@@ -49,18 +30,22 @@ namespace Utility
 		return buff;
 	}
 
-	void Log::LogToFile( const char * buff ) 
+	void Log::LogToFile(eLogType logType, std::string text)
 	{
-		const std::string path = GetOurModuleFolder() + "\\" + fileName;
+		static std::string path = GetOurModuleFolder() + "\\" + fileName + ".log";
 
 		std::ofstream logFile;
-		logFile.open( path, std::ios_base::app );
-		if ( firstEntry ) {
-
-			logFile << std::endl;
-			firstEntry = false;
+		
+		if (firstEntry) 
+		{
+			if (GetRunningExecutableFolder() == GetOurModuleFolder())
+			{
+				logFile.open(path, std::ofstream::trunc); logFile.close();
+			}	firstEntry = false;
 		}
-		logFile << buff;	
+		else logFile.open(path, std::ofstream::out | std::ofstream::app);
+
+		logFile << GetTimeFormatted().c_str() << " " << logTypeToFormatMap[logType].c_str() << " " << text.c_str() << std::endl;
 	}
 
 	Log * GetLog() 

@@ -1,11 +1,11 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 
-#include "..\ScriptHookV.h"
-#define LOG_PRINT( fmt, ...)	Utility::GetLog()->Write( Utility::eLogType::LogTypePrint,	    fmt, ##__VA_ARGS__ )
-#define LOG_DEBUG( fmt, ...)	Utility::GetLog()->Write( Utility::eLogType::LogTypeDebug,	    fmt, ##__VA_ARGS__ )
-#define LOG_WARNING( fmt, ...)	Utility::GetLog()->Write( Utility::eLogType::LogTypeWarning,	fmt, ##__VA_ARGS__ )
-#define LOG_ERROR( fmt, ...)	Utility::GetLog()->Write( Utility::eLogType::LogTypeError,	    fmt, ##__VA_ARGS__ )
+#define LOG_PRINT( fmt, ...)	Utility::GetLog()->LogToFile( Utility::eLogType::LogTypePrint,	    FMT( fmt, ##__VA_ARGS__ ))
+#define LOG_DEBUG( fmt, ...)	Utility::GetLog()->LogToFile( Utility::eLogType::LogTypeDebug,	    FMT( fmt, ##__VA_ARGS__ ))
+#define LOG_WARNING( fmt, ...)	Utility::GetLog()->LogToFile( Utility::eLogType::LogTypeWarning,	FMT( fmt, ##__VA_ARGS__ ))
+#define LOG_ERROR( fmt, ...)	Utility::GetLog()->LogToFile( Utility::eLogType::LogTypeError,	    FMT( fmt, ##__VA_ARGS__ ))
+
 #define LOG_ADDRESS(string, function) \
 		LOG_DEBUG("%s\t\t 0x%012llx (0x%llX)", string, reinterpret_cast<uint64_t>(function) , reinterpret_cast<uint64_t>(function) - Module().base())
 
@@ -28,13 +28,9 @@ namespace Utility
 		Log();
 		~Log();
 
-		void				Clean();
-
-		void				Write( eLogType logType, const char * fmt, ... );
+		void				LogToFile(eLogType logType, std::string text);
 				
 	private:
-
-		void				LogToFile( const char * buff );
 
 		const std::string	GetTimeFormatted() const;
 

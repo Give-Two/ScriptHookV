@@ -1,3 +1,4 @@
+#include "..\..\SDK\inc\enums.h"
 #include "versioning.h"
 #pragma comment(lib,"Version.lib")
 

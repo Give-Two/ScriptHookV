@@ -1,6 +1,7 @@
 #ifndef _DXHOOK_H_
 #define _DXHOOK_H_
 
+#include "..\..\SDK\inc\types.h"
 #include "..\ScriptHookV.h"
 #include <d3d11.h>
 #include <d3d11_1.h>

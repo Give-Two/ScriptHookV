@@ -1,6 +1,8 @@
 #ifndef __SCRIPT_MANAGER_H__
 #define __SCRIPT_MANAGER_H__
 
+#include "..\..\SDK\inc\types.h"
+#include "..\..\SDK\inc\enums.h"
 #include "ScriptEngine.h"
 #include "NativeInvoker.h"
 

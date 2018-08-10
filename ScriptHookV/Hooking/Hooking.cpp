@@ -3,8 +3,6 @@
 #include "..\Scripting\NativeInvoker.h"
 #include "..\Scripting\ScriptThread.h"
 #include "..\Scripting\ScriptManager.h"
-#include "..\Utility\General.h"
-#include "..\Utility\Pattern.h"
 
 HooksMapType g_hooks;
 
@@ -104,7 +102,7 @@ BOOL Hooking::NativeDetour(uint64_t hash, PVOID pHandler, PVOID* ppTarget)
 			*ppTarget = (PVOID*)handler;
 
 			if (g_hooks.find(ppTarget) != g_hooks.end()) {
-				LOG_ERROR("Native 0x%I64X is already hooked at '%p'", native, ppTarget);
+				LOG_ERROR("%s is already hooked at '%p'", native.Name, ppTarget);
 				return TRUE;
 			}
 
@@ -138,7 +136,7 @@ BOOL Hooking::NativeDetour(uint64_t hash, PVOID pHandler, PVOID* ppTarget)
 		}
 	}
 
-	LOG_DEBUG("Failed to find 0x%016llX", native);
+	LOG_DEBUG("Failed to find %s", native.Name);
 
 	return FALSE;
 }

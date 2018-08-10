@@ -5,41 +5,11 @@
 
 namespace Utility 
 {
-	template <typename T>
-	inline void SafeRelease(T *&p)
-	{
-		if (nullptr != p)
-		{
-			p->Release();
-			p = nullptr;
-		}
-	}
-
+	/* String */
 	std::wstring str_to_wstr(const std::string& string);
 	std::string wstr_to_str(const std::wstring& wstring);
 
-	const std::string	GetRunningExecutableFolder();
-	const std::string	GetOurModuleFolder();
-	const std::string	GetModuleName( const HMODULE module );
-	const std::string	GetModuleNameWithoutExtension( const HMODULE module );
-
-	void				SetOurModuleHanlde( const HMODULE module );
-	const HMODULE		GetOurModuleHandle();
-
-	bool fileExists(const char* name);
-
-	void create_thread(LPTHREAD_START_ROUTINE thread);
-
-	void killProcessByName(const char *filename);
-
-	template <typename Container, typename Element>
-	bool DoesVectorContain(const Container& container, const Element& element)
-	{
-        return std::find(std::begin(container), std::end(container), element) != std::end(container);
-	}
-
-	void playwindowsSound(const char* sound);
-
+	/* Hash */
 	constexpr unsigned char ToLowerLookupTable[256] =
 	{
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
@@ -80,6 +50,45 @@ namespace Utility
 
 	std::uint32_t joaat(const char* string);
 	std::uint32_t joaat(const std::string& string);
+
+	/* File / Folder */
+	bool				DoesFileExist(const char* name);
+	const std::string	GetRunningExecutableFolder();
+	const std::string	GetOurModuleFolder();
+
+	/* Module / Process Related */
+	void				SetOurModuleHandle(const HMODULE module);
+	const HMODULE		GetOurModuleHandle();
+	const std::string	GetModuleName(const HMODULE module);
+	const std::string	GetModuleNameWithoutExtension(const HMODULE module);
+
+	DWORD				GetProcessIDByName(const std::string& processName);
+	void				Startup(LPCTSTR lpApplicationName);
+	void				create_thread(LPTHREAD_START_ROUTINE thread);
+	void				killProcessByName(const char *filename);
+
+	bool				SetPrivilege(const char * szPrivilege, bool bState = true);
+	bool				Is64BitProcess(HANDLE hProc);
+	bool				IsProcessRunning(const char *filename);
+
+	/* General Misc */
+	template <typename T>
+	inline void SafeRelease(T *&p)
+	{
+		if (nullptr != p)
+		{
+			p->Release();
+			p = nullptr;
+		}
+	}
+
+	template <typename Container, typename Element>
+	bool DoesVectorContain(const Container& container, const Element& element)
+	{
+        return std::find(std::begin(container), std::end(container), element) != std::end(container);
+	}
+
+	void playwindowsSound(const char* sound);
 }
 
 constexpr std::uint32_t operator""_joaat(const char* string, std::size_t length)

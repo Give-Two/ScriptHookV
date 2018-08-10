@@ -20,7 +20,10 @@
     <ClCompile Include="registry.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Utilities.cpp">
+    <ClCompile Include="..\Utility\General.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Utility\Log.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,9 +38,6 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="registry.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Utilities.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

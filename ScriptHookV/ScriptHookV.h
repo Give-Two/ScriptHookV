@@ -14,9 +14,9 @@
 #include <sstream>
 #include <algorithm>
 #include <memory>
+#include <TlHelp32.h>
 #include <fstream>
 #include <Shlwapi.h>
-#include <Detours.h>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -30,21 +30,6 @@
 
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "shlwapi.lib")
-
-#include "Utility\Log.h"
-#include "Utility\Pattern.h"
-#include "..\SDK\inc\types.h"
-#include "..\SDK\inc\enums.h"
-
-template<typename InputType, typename ReturnType>
-InputType RCast(InputType Input, ReturnType Ret)
-{
-	return reinterpret_cast<decltype(Input)>(Ret);
-}
-
-extern std::deque<std::function<void()>> g_Stack;
-extern std::uint32_t g_ThreadHash;
-extern int g_GameVersion;
 
 #define FMT(FM, ...) \
 	(   false \
@@ -75,5 +60,19 @@ std::string string_format(const std::string& format, Args const & ... args)
 	auto res = std::string(buf.get(), buf.get() + size - 1);
 	return res;
 }
+
+#include "Utility\Log.h"
+#include "Utility\General.h"
+#include "Utility\Pattern.h"
+
+template<typename InputType, typename ReturnType>
+InputType RCast(InputType Input, ReturnType Ret)
+{
+	return reinterpret_cast<decltype(Input)>(Ret);
+}
+
+extern std::deque<std::function<void()>> g_Stack;
+extern std::uint32_t g_ThreadHash;
+extern int g_GameVersion;
 
 #endif // __SCRIPT_HOOK__

@@ -59,15 +59,15 @@
   <ItemGroup>
     <ClCompile Include="Injection.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="registry.cpp" />
-    <ClCompile Include="Utilities.cpp" />
+    <ClCompile Include="..\Utility\General.cpp" />
+    <ClCompile Include="..\Utility\Log.cpp" />
+	<ClCompile Include="registry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Injection.h" />
     <ClInclude Include="NT Stuff.h" />
     <ClInclude Include="registry.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Icon.ico" />

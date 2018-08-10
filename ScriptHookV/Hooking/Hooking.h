@@ -2,6 +2,7 @@
 #define __HOOKING_H__
 
 #include "..\ScriptHookV.h"
+#include <Detours.h>
 
 namespace Hooking
 {

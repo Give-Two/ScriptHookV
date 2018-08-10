@@ -23,7 +23,7 @@ bool InputHook::Initialize()
 	}
 	else 
 	{
-		LOG_PRINT( "Input hook attached: WndProc 0x%p", (DWORD_PTR)oWndProc );
+		LOG_PRINT( "Input hook attached: WndProc 0x%p", oWndProc );
 		return true;
 	}
 }
