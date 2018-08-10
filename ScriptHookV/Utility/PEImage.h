@@ -3,12 +3,13 @@
 
 #include "..\ScriptHookV.h"
 
-namespace Utility {
-
+namespace Utility 
+{
 	typedef const IMAGE_NT_HEADERS64 NT64H;
 	typedef std::vector<char> bufferVec;
 
-	class PEImage {
+	class PEImage 
+	{
 	public:
 
 		PEImage();

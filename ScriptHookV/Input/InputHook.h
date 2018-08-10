@@ -6,8 +6,8 @@
 
 #include "..\ScriptHookV.h"
 
-namespace InputHook {
-
+namespace InputHook 
+{
 	bool Initialize();
 
 	void Remove();

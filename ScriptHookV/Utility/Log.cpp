@@ -5,29 +5,27 @@
 
 const std::string fileName = "ScriptHookV.log";
 
-namespace Utility {
-
+namespace Utility 
+{
 	static Log g_Log;
 
-	Log::Log() {
-
+	Log::Log() 
+	{
 		logTypeToFormatMap[Utility::LogTypePrint] =		"";
 		logTypeToFormatMap[Utility::LogTypeDebug] =		" [Debug]";
 		logTypeToFormatMap[Utility::LogTypeWarning]	=	" [Warning]";
 		logTypeToFormatMap[Utility::LogTypeError] =		" [Error]";
 	}
 
-	Log::~Log() {
-
-	}
+	Log::~Log()	{}
 
 	void Log::Clean()
 	{
 		remove((GetOurModuleFolder() + "\\" + fileName).c_str());
 	}
 
-	void Log::Write( eLogType logType, const char * fmt, ... ) {
-
+	void Log::Write( eLogType logType, const char * fmt, ... ) 
+	{
 		char buf[2048] = { 0 };
 		va_list va_alist;
 
@@ -40,8 +38,8 @@ namespace Utility {
 		LogToFile( buff2 );
 	}
 
-	const std::string Log::GetTimeFormatted() const {
-
+	const std::string Log::GetTimeFormatted() const
+	{
 		struct tm timeStruct;
 		time_t currTime = time( NULL );
 		localtime_s( &timeStruct, &currTime );
@@ -51,8 +49,8 @@ namespace Utility {
 		return buff;
 	}
 
-	void Log::LogToFile( const char * buff ) {
-
+	void Log::LogToFile( const char * buff ) 
+	{
 		const std::string path = GetOurModuleFolder() + "\\" + fileName;
 
 		std::ofstream logFile;
@@ -65,8 +63,8 @@ namespace Utility {
 		logFile << buff;	
 	}
 
-	Log * GetLog() {
-
+	Log * GetLog() 
+	{
 		return &g_Log;
 	}
 }

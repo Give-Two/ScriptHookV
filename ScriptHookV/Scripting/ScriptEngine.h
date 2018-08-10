@@ -5,7 +5,8 @@
 
 #include "NativeInvoker.h"
 
-enum eGameState {
+enum eGameState 
+{
 	GameStatePlaying,
 	GameStateIntro,
 	GameStateLicenseShit = 3,
@@ -13,7 +14,8 @@ enum eGameState {
 	GameStateLoadingSP_MP = 6
 };
 
-class ScriptEngine {
+class ScriptEngine 
+{
 public:
 
 	static bool Initialize();

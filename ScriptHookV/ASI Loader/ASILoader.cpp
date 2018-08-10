@@ -6,26 +6,28 @@
 
 using namespace Utility;
 
-void LoadPlugin(const std::string& asiSearchFolder) {
-
+void LoadPlugin(const std::string& asiSearchFolder) 
+{
 	const std::string asiSearchQuery = asiSearchFolder + "\\*.asi";
 	WIN32_FIND_DATAA fileData;
 	HANDLE fileHandle = FindFirstFileA(asiSearchQuery.c_str(), &fileData);
-	if (fileHandle != INVALID_HANDLE_VALUE) {
-
-		do {
-
+	if (fileHandle != INVALID_HANDLE_VALUE) 
+	{
+		do 
+		{
 			const std::string pluginPath = asiSearchFolder + "\\" + fileData.cFileName;
 
 			LOG_PRINT("Loading \"%s\"", pluginPath.c_str());
 			
 			// Load Image
 			HMODULE module = LoadLibraryA(pluginPath.c_str());
-			if (module) {
+			if (module) 
+			{
 				LOG_PRINT("\tLoaded \"%s\" => 0x%p", fileData.cFileName, module);
 				Utility::playwindowsSound("ding.wav");
 			}
-			else {
+			else 
+			{
 				DWORD errorMessageID = ::GetLastError();
 				if (errorMessageID)
 				{
@@ -46,8 +48,8 @@ void LoadPlugin(const std::string& asiSearchFolder) {
 	}
 }
 
-void ASILoader::Initialize() {
-
+void ASILoader::Initialize() 
+{
 	LOG_PRINT( "Loading *.asi plugins" );
 	std::string moduleFolder = GetOurModuleFolder();
 	std::string gtavFolder = GetRunningExecutableFolder();

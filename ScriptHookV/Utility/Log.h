@@ -9,9 +9,10 @@
 #define LOG_ADDRESS(string, function) \
 		LOG_DEBUG("%s\t\t 0x%012llx (0x%llX)", string, reinterpret_cast<uint64_t>(function) , reinterpret_cast<uint64_t>(function) - Module().base())
 
-namespace Utility {
-
-	enum eLogType {
+namespace Utility
+{
+	enum eLogType
+	{
 		LogTypePrint,
 		LogTypeDebug,
 		LogTypeWarning,
@@ -20,7 +21,8 @@ namespace Utility {
 
 	typedef std::map<int32_t, std::string> intStringMap;
 
-	class Log {
+	class Log 
+	{
 	public:
 
 		Log();

@@ -88,6 +88,7 @@ public:
 	void Draw();
 	bool InitializeHooks();
 	void InitializeDevices();
+	void ReleaseDevices();
 
 	Vector2 GetResolution();
 	int CreateTexture(const char *texFileName);

@@ -13,11 +13,14 @@ namespace Hooking
 		bool unnamed = (!name);
 
 		// Should you check this before you try and hook something?
-		if (g_hooks.find(pTarget) != g_hooks.end()) {
-			if (unnamed) {
+		if (g_hooks.find(pTarget) != g_hooks.end()) 
+		{
+			if (unnamed) 
+			{
 				LOG_ERROR("Function Pointer is already hooked at %llX", normalise_base(pTarget));
 			}
-			else {
+			else 
+			{
 				LOG_ERROR("%s is already hooked at %llX", name, normalise_base(pTarget));
 			}
 			return nullptr;
@@ -27,7 +30,8 @@ namespace Hooking
 		DetourUpdateThread(GetCurrentThread());
 		PDETOUR_TRAMPOLINE pTrampoline = nullptr;
 		DetourAttachEx(pTarget, pHandler, &pTrampoline, nullptr, nullptr);
-		if (DetourTransactionCommit() != NO_ERROR) {
+		if (DetourTransactionCommit() != NO_ERROR) 
+		{
 			if (unnamed) LOG_ERROR("Could not hook '%llX'", normalise_base(pTarget));
 			else LOG_ERROR("Could not hook '%s'", name);
 			DetourTransactionAbort(); // Really necessary?

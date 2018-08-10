@@ -3,8 +3,8 @@
 
 #include "..\ScriptHookV.h"
 
-namespace Utility {
-
+namespace Utility 
+{
 	template <typename T>
 	inline void SafeRelease(T *&p)
 	{

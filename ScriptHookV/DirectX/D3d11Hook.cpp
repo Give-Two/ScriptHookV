@@ -111,10 +111,7 @@ LPVOID Hook_Present(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
 	}
 	else if (windowedState != g_D3DHook.m_windowedMode)
 	{
-		g_D3DHook.m_pRenderTargetTexture->Release();
-		g_D3DHook.m_pRenderTargetView->Release();
-		g_D3DHook.m_pContext->Release();
-		g_D3DHook.m_pDevice->Release();
+		g_D3DHook.ReleaseDevices();
 
 		windowedState = g_D3DHook.m_windowedMode;
 	}
@@ -128,10 +125,7 @@ LPVOID Hook_ResizeBuffers(IDXGISwapChain *chain, UINT BufferCount, UINT Width, U
 {
 	g_D3DHook.m_IsResizing = true;
 
-	g_D3DHook.m_pRenderTargetTexture->Release();
-	g_D3DHook.m_pRenderTargetView->Release();
-	g_D3DHook.m_pContext->Release();
-	g_D3DHook.m_pDevice->Release();
+	g_D3DHook.ReleaseDevices();
 
 	RCast(Hook_ResizeBuffers, ResizeBuffers)(chain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 
@@ -220,6 +214,15 @@ void DX11Hook::InitializeDevices()
 	}
 }
 
+void DX11Hook::ReleaseDevices()
+{
+	g_D3DHook.m_pRenderTargetTexture->Release();
+	g_D3DHook.m_pRenderTargetView->Release();
+	g_D3DHook.m_pContext->Release();
+	g_D3DHook.m_pDevice->Release();
+	LOG_DEBUG("Unloaded D3DX11 Devices");
+}
+
 void DX11Hook::Draw()
 {
 	if (m_pSwapchain)
@@ -232,7 +235,8 @@ void DX11Hook::Draw()
 			m_restoreState = m_stateSaver->saveCurrentState(m_pContext);
 			m_pBatch->Begin();
 
-			for (auto& t : DrawTextureArray) {
+			for (auto& t : DrawTextureArray) 
+			{
                 if (t.tex.bEnabled) t.tex.Draw(*m_pSpriteBatch);
             }
 
@@ -243,7 +247,8 @@ void DX11Hook::Draw()
                 m_stateSaver->restoreSavedState();
 		}
 
-		for (auto & function : m_PresentCallbacks) {
+		for (auto & function : m_PresentCallbacks) 
+		{
 			m_restoreState = m_stateSaver->saveCurrentState(m_pContext);
 			function(m_pSwapchain);
 			if (m_restoreState)
@@ -418,7 +423,8 @@ bool StateSaver::saveCurrentState(ID3D11DeviceContext *pContext)
 
 	ID3D11Device *pDevice;
 	pContext->GetDevice(&pDevice);
-	if (pDevice != NULL) {
+	if (pDevice != NULL) 
+	{
 		m_featureLevel = pDevice->GetFeatureLevel();
 		pDevice->Release();
 	}

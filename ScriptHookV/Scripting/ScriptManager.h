@@ -15,9 +15,9 @@ public:
 		wakeAt = timeGetTime();
 	}
 
-	inline ~Script() {
-
-		if ( scriptFiber ) 
+	inline ~Script() 
+	{
+		if (scriptFiber)
 		{
 			DeleteFiber( scriptFiber );
 		}

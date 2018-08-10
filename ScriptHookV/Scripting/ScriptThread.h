@@ -4,8 +4,8 @@
 
 enum eThreadState
 {
-	ThreadStateIdle = 0x0,
-	ThreadStateRunning = 0x1,
+    ThreadStateRunning = 0x0,
+    ThreadStateIdle    = 0x1,
 	ThreadStateKilled = 0x2,
 	ThreadState3 = 0x3,
 	ThreadState4 = 0x4, // Sets opsToExecute to 1100000, and state to Idle in CallNative
@@ -14,9 +14,32 @@ enum eThreadState
 struct scrThreadContext
 {
     int ThreadId;
-    unsigned int ScriptHash;
-    eThreadState State;
-    int padC[39];
+	uint32_t ScriptHash;
+	eThreadState State;
+	int IP;
+	int FrameSP;
+	int SP;
+	float TimerA;
+	float TimerB;
+	float WaitTimer;
+	int _mUnk1;
+	int _mUnk2;
+	int _f2C;
+	int _f30;
+	int _f34;
+	int _f38;
+	int _f3C;
+	int _f40;
+	int _f44;
+	int _f48;
+	int _f4C;
+	int StackSize;
+	int CatchIP;
+	int CatchFrame;
+	int CatchSP;
+	int _set1;
+	int FunctionDepth;
+	int FunctionReturns[16];
 };
 
 static_assert(sizeof(scrThreadContext) == 0xA8, "");
@@ -24,9 +47,8 @@ static_assert(sizeof(scrThreadContext) == 0xA8, "");
 struct scrThread
 {
 	void *vTable;
-	scrThreadContext ThreadContext;
-	//ScriptArgument *pStack;
-	void *pStack;
+	scrThreadContext m_ctx;
+	void *m_pStack;
 	int pad0;
 	int ParameterSize;
 	int StaticsSize;

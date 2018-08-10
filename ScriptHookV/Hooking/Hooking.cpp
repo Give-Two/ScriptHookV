@@ -64,18 +64,18 @@ PVOID MY_WAIT(scrNativeCallContext *cxt)
 	scrThread* current_thread = GetActiveThread();
 
 	// do this while script::wait
-	if (target_thread && current_thread->ThreadContext.State == ThreadStateIdle)
+	if (target_thread && current_thread->m_ctx.State == ThreadStateIdle)
 	{
-		if (current_thread->ThreadContext.ScriptHash != g_ThreadHash)
+		if (current_thread->m_ctx.ScriptHash != g_ThreadHash)
 		{
 			SetActiveThread(target_thread);
 			g_AdditionalThread.DoRun();
 			SetActiveThread(current_thread);
 		}
 	}
-	else if (current_thread->ThreadContext.State == ThreadStateRunning)
+	else if (current_thread->m_ctx.State == ThreadStateRunning)
 	{
-		if (current_thread->ThreadContext.ScriptHash == g_ThreadHash)
+		if (current_thread->m_ctx.ScriptHash == g_ThreadHash)
 		{
 			if (target_thread == nullptr) target_thread = current_thread;
 			g_ScriptThread.DoRun();

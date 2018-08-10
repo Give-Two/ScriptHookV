@@ -3,9 +3,9 @@
 
 #include "..\ScriptHookV.h"
 
-namespace ASILoader {
-
-	void				Initialize();
+namespace ASILoader 
+{
+	void Initialize();
 };
 
 #endif // __ASI_LOADER_H__
