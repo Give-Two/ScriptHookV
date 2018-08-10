@@ -9,7 +9,8 @@
 #include "..\Utility\General.h"
 #include "..\Hooking\Hooking.h"
 
-struct GlobalTable {
+struct GlobalTable 
+{
 	__int64** GlobalBasePtr;
 	__int64* AddressOf(int index) const { return &GlobalBasePtr[index >> 18 & 0x3F][index & 0x3FFFF]; }
 	bool IsInitialised()const { return *GlobalBasePtr != NULL; }
@@ -19,11 +20,8 @@ GlobalTable		globalTable;
 eGameState *	gameState;
 int				g_GameVersion;
 
-bool ScriptEngine::Initialize() {
-
-	// no legals
-	if (auto p_gameLegals = "72 1F E8 ? ? ? ? 8B 0D"_Scan) p_gameLegals.nop(2);
-
+bool ScriptEngine::Initialize() 
+{
 	// init Direct3d hook
 	if (!g_D3DHook.InitializeHooks())
 	{
@@ -32,8 +30,8 @@ bool ScriptEngine::Initialize() {
 	}
 
 	// init Winproc hook
-	if (!InputHook::Initialize()) {
-
+	if (!InputHook::Initialize()) 
+	{
 		LOG_ERROR("Failed to Initialize InputHook");
 		return 0;
 	}
@@ -66,17 +64,18 @@ bool ScriptEngine::Initialize() {
     while (GetGameState() != GameStatePlaying) Sleep(100);
 
 	LOG_PRINT("Performing native hooking...");
-	Hooking::Natives();
-	
-	ASILoader::Initialize();
+	if (Hooking::Natives())
+	{
+		ASILoader::Initialize();
+	}
 	
 	LOG_PRINT("Initialization finished");
 
 	return true;
 }
 
-eGameState ScriptEngine::GetGameState() {
-
+eGameState ScriptEngine::GetGameState() 
+{
 	return *gameState;
 }
 

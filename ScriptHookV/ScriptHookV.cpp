@@ -12,12 +12,23 @@ std::uint32_t g_ThreadHash = "main_persistent"_joaat;
 
 std::deque<std::function<void()>> g_Stack;
 
-BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/ ) {
-
-	switch ( dwReason ) {
-		case DLL_PROCESS_ATTACH: {
-
+BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/ ) 
+{
+	switch ( dwReason ) 
+	{
+		case DLL_PROCESS_ATTACH: 
+		{
 			SetOurModuleHanlde(hModule);
+
+			// no launcher check
+			if (auto p_launcherCheck = "E8 ? ? ? ? 84 C0 75 0C B2 01 B9 2F"_Scan) p_launcherCheck.nop(21);
+			
+			// no legals
+			if (auto p_gameLegals = "72 1F E8 ? ? ? ? 8B 0D"_Scan) p_gameLegals.nop(2);
+
+			// no annoying movie
+			// this doesn't save any loadup time just plays nothing
+			//if (auto p_preMovie = "70 6C 61 74 66 6F 72 6D 3A 2F 6D 6F 76"_Scan) p_preMovie.nop(13);
 
 			// Clear LogFile
 			//GetLog()->Clean();
@@ -55,8 +66,8 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 					Utility::killProcessByName("GTAVLauncher.exe");
 					LOG_DEBUG("Killed GTAVLauncher.exe");
 
-					if (!ScriptEngine::Initialize()) {
-
+					if (!ScriptEngine::Initialize()) 
+					{
 						LOG_ERROR("Failed to initialize ScriptEngine");
 						return TRUE;
 					}
@@ -67,7 +78,8 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 			}
 			break;
 		}
-		case DLL_PROCESS_DETACH: {
+		case DLL_PROCESS_DETACH: 
+		{
 			break;
 		}
 	}
