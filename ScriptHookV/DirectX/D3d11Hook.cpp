@@ -19,85 +19,13 @@ static Vector2 windowSize = Vector2();
 static bool windowedState = true;
 
 //====================================================================================================================================================================
-// SwapChain Vtable Lookup
-LRESULT CALLBACK DXGIMsgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(hwnd, uMsg, wParam, lParam); }
-void** GetSwapChainVtable()
-{
-	if (auto swapchain = rage::GetGtaSwapChain())
-	{
-		void** pVtable = *(void***) swapchain;
-		LOG_DEBUG("Using Games SwapChain");
-		return pVtable;
-	}
-	else
-	{
-		LOG_DEBUG("Using Temp SwapChain");
-		WNDCLASSEXA wc = { sizeof(WNDCLASSEX), CS_CLASSDC, DXGIMsgProc, 0L, 0L, GetModuleHandleA(NULL), NULL, NULL, NULL, NULL, "DX", NULL };
-		RegisterClassExA(&wc);
-		HWND hWnd = CreateWindowA("DX", NULL, WS_OVERLAPPEDWINDOW, 100, 100, 300, 300, NULL, NULL, wc.hInstance, NULL);
-		//Temporary device pointers
-		ID3D11Device* pTempDevice = nullptr;
-		ID3D11DeviceContext* pTempContext = nullptr;
-		IDXGISwapChain* pTempSwapChain = nullptr;
-
-		DXGI_SWAP_CHAIN_DESC SwapChainDesc;
-		ZeroMemory(&SwapChainDesc, sizeof(SwapChainDesc));
-
-		SwapChainDesc.BufferCount = 1;
-		SwapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		SwapChainDesc.OutputWindow = hWnd;
-		SwapChainDesc.SampleDesc.Count = 1;
-		SwapChainDesc.Windowed = ((GetWindowLongPtr(hWnd, GWL_STYLE) & WS_POPUP) != 0) ? false : true;
-		SwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-		SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-		SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-		D3D_FEATURE_LEVEL requestedLevels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1 };
-		D3D_FEATURE_LEVEL obtainedLevel;
-		UINT createFlags = 0;
-		// This flag gives you some quite wonderful debug text. Not wonderful for performance, though!
-		//createFlags |= D3D11_CREATE_DEVICE_DEBUG;
-		if (FAILED(D3D11CreateDeviceAndSwapChain(
-			nullptr,
-			D3D_DRIVER_TYPE_HARDWARE,
-			nullptr,
-			createFlags,
-			requestedLevels,
-			sizeof(requestedLevels) / sizeof(D3D_FEATURE_LEVEL),
-			D3D11_SDK_VERSION,
-			&SwapChainDesc,
-			&pTempSwapChain,
-			&pTempDevice,
-			&obtainedLevel,
-			&pTempContext)))
-		{
-			MessageBox(hWnd, "Failed to create directX device and swapchain!", "Error", MB_ICONERROR);
-			return NULL;
-		}
-
-		void** pVtable = *(void***)pTempSwapChain;
-
-		//Unload temporary devices
-		pTempSwapChain->Release();
-		pTempContext->Release();
-		pTempDevice->Release();
-		DestroyWindow(hWnd);
-		return pVtable;
-	}
-}
-
-//====================================================================================================================================================================
 // Function hook stubs
 
 // IDXGISwapChain::Present()
 PDETOUR_TRAMPOLINE Present;
 LPVOID Hook_Present(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
 {
-	BOOL fullscreenState;
-	chain->GetFullscreenState(&fullscreenState, nullptr);
-	g_D3DHook.m_windowedMode = !fullscreenState;
-
-	if (!g_D3DHook.m_IsResizing && windowedState == g_D3DHook.m_windowedMode)
+	if (!g_D3DHook.m_IsResizing)
 	{
 		if (g_D3DHook.m_pSwapchain == nullptr)
 		{
@@ -106,14 +34,20 @@ LPVOID Hook_Present(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
 		}
 		else
 		{
-			g_D3DHook.Draw();
-		}
-	}
-	else if (windowedState != g_D3DHook.m_windowedMode)
-	{
-		g_D3DHook.ReleaseDevices();
+			BOOL fullscreenState;
+			chain->GetFullscreenState(&fullscreenState, nullptr);
+			g_D3DHook.m_windowedMode = !fullscreenState;
 
-		windowedState = g_D3DHook.m_windowedMode;
+			if (windowedState != g_D3DHook.m_windowedMode)
+			{
+				g_D3DHook.ReleaseDevices();
+				windowedState = g_D3DHook.m_windowedMode;
+			}
+			else
+			{
+				g_D3DHook.Draw();
+			}
+		}
 	}
 
 	return RCast(Hook_Present, Present)(chain, SyncInterval, Flags);
@@ -162,14 +96,16 @@ enum eSwapChainVtableIndices : int
 bool DX11Hook::InitializeHooks()
 {
 	HMODULE hD3D11DLL = 0;
-	do
+	while (!hD3D11DLL)
 	{
 		hD3D11DLL = GetModuleHandle("d3d11.dll");
 		Sleep(100);
-	}	while (!hD3D11DLL);
+	}
 	
-	if (PVOID* pVTable = GetSwapChainVtable())
+	if (auto swapchain = rage::GetGtaSwapChain())
 	{
+		PVOID* pVTable = *(PVOID**)swapchain;
+		
 		auto p_Present = pVTable[SC_PRESENT];
 		Present = Hooking::CreateDetour(&p_Present, &Hook_Present, "IDXGISwapChainPresent");
 
