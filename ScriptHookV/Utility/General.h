@@ -53,17 +53,20 @@ namespace Utility
 
 	/* File / Folder */
 	bool				DoesFileExist(const char* name);
+	const std::string	GetModuleFolder(HMODULE module, bool fullPath = false);
 	const std::string	GetRunningExecutableFolder();
 	const std::string	GetOurModuleFolder();
 
 	/* Module / Process Related */
 	void				SetOurModuleHandle(const HMODULE module);
 	const HMODULE		GetOurModuleHandle();
+
 	const std::string	GetModuleName(const HMODULE module);
 	const std::string	GetModuleNameWithoutExtension(const HMODULE module);
 
 	DWORD				GetProcessIDByName(const std::string& processName);
-	void				Startup(LPCTSTR lpApplicationName);
+	HANDLE				StartProcessPaused(LPCTSTR lpApplicationName, PHANDLE ptr_thread);
+	void				StartProcess(LPCTSTR lpApplicationName);
 	void				create_thread(LPTHREAD_START_ROUTINE thread);
 	void				killProcessByName(const char *filename);
 

@@ -40,22 +40,24 @@ namespace Utility
 		return (stat(name, &buffer) == 0);
 	}
 
-	const std::string GetRunningExecutableFolder() {
-
-		char fileName[MAX_PATH];
-		GetModuleFileNameA(NULL, fileName, MAX_PATH);
-
-		std::string currentPath = fileName;
-		return currentPath.substr(0, currentPath.find_last_of("\\"));
+	const std::string GetModuleFolder(HMODULE module, bool fullPath)
+	{
+		std::string path;
+		char buffer[MAX_PATH];
+		GetModuleFileNameA(module, buffer, MAX_PATH);
+		if (!fullPath) PathRemoveFileSpecA(buffer);
+		path = buffer;
+		return path;
 	}
 
-	const std::string GetOurModuleFolder() {
+	const std::string GetRunningExecutableFolder() 
+	{
+		return GetModuleFolder(NULL);
+	}
 
-		char fileName[MAX_PATH];
-		GetModuleFileNameA(ourModule, fileName, MAX_PATH);
-
-		std::string currentPath = fileName;
-		return currentPath.substr(0, currentPath.find_last_of("\\"));
+	const std::string GetOurModuleFolder() 
+	{
+		return GetModuleFolder(ourModule);
 	}
 
 	/* Module / Process Related */
@@ -122,7 +124,7 @@ namespace Utility
 		return 0;
 	}
 
-	void Startup(LPCTSTR lpApplicationName)
+	void StartProcess(LPCTSTR lpApplicationName)
 	{
 		// additional information
 		STARTUPINFO si;
@@ -147,6 +149,36 @@ namespace Utility
 							// Close process and thread handles. 
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
+	}
+
+	HANDLE StartProcessPaused(LPCTSTR lpApplicationName, PHANDLE ptr_thread)
+	{
+		if (ptr_thread == nullptr) return nullptr;
+
+		// additional information
+		STARTUPINFO si;
+		PROCESS_INFORMATION pi;
+
+		// set the size of the structures
+		ZeroMemory(&si, sizeof(si));
+		si.cb = sizeof(si);
+		ZeroMemory(&pi, sizeof(pi));
+
+		// start the program up
+		CreateProcess(
+			lpApplicationName,  // the path
+			NULL,				// Command line
+			NULL,				// Process handle not inheritable
+			NULL,				// Thread handle not inheritable
+			FALSE,				// Set handle inheritance to FALSE
+			CREATE_SUSPENDED,	// Creation flags
+			NULL,				// Use parent's environment block
+			NULL,				// Use parent's starting directory 
+			&si,				// Pointer to STARTUPINFO structure
+			&pi);				// Pointer to PROCESS_INFORMATION structure
+
+		*ptr_thread = pi.hThread;
+		return pi.hProcess;
 	}
 
 	void create_thread(LPTHREAD_START_ROUTINE thread)

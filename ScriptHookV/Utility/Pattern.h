@@ -3,33 +3,6 @@
 
 #include "..\ScriptHookV.h"
 
-class Module
-{
-private:
-	uintptr_t m_begin;
-	uintptr_t m_end;
-	DWORD m_size;
-public:
-	template<typename TReturn, typename TOffset>
-	TReturn* getRVA(TOffset rva)
-	{
-		return (TReturn*)(m_begin + rva);
-	}
-
-	Module(void* module = GetModuleHandle(nullptr))
-		: m_begin((uintptr_t)module), m_end(0)
-	{
-		PIMAGE_DOS_HEADER dosHeader = getRVA<IMAGE_DOS_HEADER>(0);
-		PIMAGE_NT_HEADERS ntHeader = getRVA<IMAGE_NT_HEADERS>(dosHeader->e_lfanew);
-
-		m_end = m_begin + ntHeader->OptionalHeader.SizeOfCode;
-		m_size = ntHeader->OptionalHeader.SizeOfImage;
-	}
-	inline uintptr_t base() { return m_begin; }
-	inline uintptr_t end() { return m_end; }
-	inline DWORD size() { return m_size; }
-};
-
 namespace mem
 {
 	namespace traits

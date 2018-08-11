@@ -60,9 +60,6 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 				{
 					LOG_PRINT("Initializing...");
 
-					Utility::killProcessByName("GTAVLauncher.exe");
-					LOG_DEBUG("Killed GTAVLauncher.exe");
-
 					if (!ScriptEngine::Initialize()) 
 					{
 						LOG_ERROR("Failed to initialize ScriptEngine");

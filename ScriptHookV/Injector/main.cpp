@@ -6,9 +6,6 @@
 int main()
 {
 	/* Configurable Settings */
-	
-	//x64 process to inject our DLL
-	DWORD dwProcessId = Utility::GetProcessIDByName("GTA5.exe");
 
 	//DLL to inject
 	LPCSTR dllName = "ScriptHookV.dll";
@@ -26,7 +23,11 @@ int main()
 
 	HWND hWindow = NULL;
 	HANDLE hProcess = NULL;
+	DWORD dwProcessId = 0;
 	char * cpDllFile = nullptr;
+	std::string sExecutablePath;
+	bool isRetailKey = false;
+	bool isSteamKey = false;
 
 	// first truncated entry
 	LOG_PRINT("\n");
@@ -36,10 +37,17 @@ int main()
 
 	Utility::SetOurModuleHandle(GetModuleHandle(NULL));
 
-	if (!dwProcessId)
+	if (dwProcessId = Utility::GetProcessIDByName("GTA5.exe")) goto DO_INJECT;
+
+	else
 	{
-		Registry reg;
-		if (reg.isRetailKey() == true)//RETAIL
+		Registry reg;	
+
+		isSteamKey = reg.isSteamKey();
+
+		isRetailKey = reg.isRetailKey();
+
+		if (isRetailKey)//RETAIL
 		{
 			LOG_DEBUG("Retail GTA V version detected.");
 			if (reg.GetValue().empty())
@@ -48,17 +56,16 @@ int main()
 			}
 			else
 			{
-				std::string launcher = reg.GetValue() + "\\GTAVLauncher.exe";
-				if (!Utility::DoesFileExist(launcher.c_str()))
-					BREAK_WITH_ERROR("GTAVLauncher.exe not found");
+				sExecutablePath = reg.GetValue() + "\\GTA5.exe";
+				if (!Utility::DoesFileExist(sExecutablePath.c_str()))
+					BREAK_WITH_ERROR("GTA5.exe not found");
 
-				LOG_DEBUG("Starting %s", launcher.c_str());
-				Utility::Startup(launcher.c_str());
-				LOG_DEBUG("Waiting for GTA5.exe process to become available...");
+				LOG_DEBUG("Starting %s", "GTAVLauncher.exe");
+				Utility::StartProcess((reg.GetValue() + "\\GTAVLauncher.exe").c_str());
 			}
 		}
 		//STEAM
-		else if (reg.isSteamKey() == true)
+		else if (isSteamKey)
 		{
 			LOG_DEBUG("Steam GTA V version detected.");
 			if (reg.GetValue(true).empty())
@@ -67,64 +74,68 @@ int main()
 			}
 			else
 			{
+				sExecutablePath = reg.GetValue() + "\\GTA5.exe";
+				if (!Utility::DoesFileExist(sExecutablePath.c_str()))
+					BREAK_WITH_ERROR("GTA5.exe not found");
+
 				LOG_DEBUG("Starting GTA V - steam id:271590");
-				ShellExecute(NULL, "open", "steam://run/271590", NULL, NULL, SW_SHOWNORMAL);
-				LOG_DEBUG("Waiting for GTA5.exe process to become available...");
+				ShellExecute(NULL, "open", "steam://run/271590", NULL, NULL, SW_SHOWNORMAL);	
 			}
 		}
 
 		// Wait while target process is unavailable
-		while (!dwProcessId)
+		LOG_DEBUG("Waiting for GTA5.exe process to become available...");
+		while (!dwProcessId) 
 		{
-			dwProcessId = Utility::GetProcessIDByName("GTA5.exe");
-			if (reg.isRetailKey() == true)
+			dwProcessId = Utility::GetProcessIDByName("GTA5.exe"); 
+			
+			if (isRetailKey)
 			{
 				if (!Utility::IsProcessRunning("GTAVLauncher.exe"))
 				{
-					BREAK_WITH_ERROR("GTAVLauncher.exe Is no longer running");
+					BREAK_WITH_ERROR("GTAVLauncher.exe Is no longer running, aborting injection");
 				}
 			}
+
 			Sleep(100);
 		}
-	}	LOG_DEBUG("Found GTA5.exe, PID: %lu\n", dwProcessId);
-
-	// Wait for window to reappear
-	while (!hWindow)
-	{
-		hWindow = FindWindow("grcWindow", NULL);
 	}
+	
+	DO_INJECT:
 
 	// Get full file path
 	cpDllFile = new char[MAX_PATH];
-	if (cpDllFile == 0) return 0;
-	if (!GetFullPathNameA(dllName, MAX_PATH, cpDllFile, 0))
+	if (!GetFullPathName(dllName, MAX_PATH, cpDllFile, 0))
 		BREAK_WITH_ERROR("Unable to find DLL to inject");
+
+	Utility::SetPrivilege("SeDebugPrivilege", true);
 
 	INJECTION_MODE im = (INJECTION_MODE)InjectionMethod;
 	DWORD Flags = 0;
 	if (Unlink)
 		Flags = INJ_UNLINK_FROM_PEB;
 	Flags |= HeaderOption;
-
-	Utility::SetPrivilege("SeDebugPrivilege", true);
 	DWORD Err = 0;
 	DWORD Ret = 0;
-	if (dwProcessId)
+
+	LOG_DEBUG("Found GTA5.exe, PID: %lu\n", dwProcessId);
+
+	while (!hWindow)
 	{
-		hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwProcessId);
-		if (!hProcess)
-			return 0;
+		hWindow = FindWindow("grcWindow", NULL);
+		Sleep(100);
+	}
 
-		// Check if our dll is already injected
-		if (get_module_address(hProcess, cpDllFile))
-		{
-			return EXIT_FAILURE;
-		}
+	hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwProcessId);
+	
+	if (!hProcess)
+		BREAK_WITH_ERROR("Opening GTA5.exe for injection.");
 
+	// Check if our dll is already injected
+	if (!GetModuleInProcess(hProcess, cpDllFile))
+	{
 		InjectDLL(cpDllFile, hProcess, im, ThreadHijacking, Flags, &Err);
-
 		CloseHandle(hProcess);
-
 		if (Ret)
 		{
 			char szRet[9]{ 0 };
@@ -135,7 +146,6 @@ int main()
 			Msg += szRet;
 			Msg += "\nAdvanced info: 0x";
 			Msg += szAdv;
-
 			MessageBoxA(0, Msg.c_str(), "Injection failed", MB_ICONERROR);
 		}
 	}

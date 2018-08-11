@@ -47,7 +47,7 @@ bool FileExistsA(const char * szFile);
 HANDLE StartRoutine(HANDLE hTargetProc, void * pRoutine, void * pArg, bool Hijack = false, bool Fastcall = true);
 PEB * GetPEB(HANDLE hProc);
 
-HMODULE get_module_address(HANDLE hProc, const char* moduleName)
+HMODULE GetModuleInProcess(HANDLE hProc, const char* moduleName)
 {
 	HMODULE	hModBuf[0xFF];
 	DWORD	bN;

@@ -61,7 +61,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="..\Utility\General.cpp" />
     <ClCompile Include="..\Utility\Log.cpp" />
-	<ClCompile Include="registry.cpp" />
+    <ClCompile Include="registry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Injection.h" />

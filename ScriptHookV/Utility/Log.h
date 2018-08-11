@@ -7,7 +7,7 @@
 #define LOG_ERROR( fmt, ...)	Utility::GetLog()->LogToFile( Utility::eLogType::LogTypeError,	    FMT( fmt, ##__VA_ARGS__ ))
 
 #define LOG_ADDRESS(string, function) \
-		LOG_DEBUG("%s\t\t 0x%012llx (0x%llX)", string, reinterpret_cast<uint64_t>(function) , reinterpret_cast<uint64_t>(function) - Module().base())
+		LOG_DEBUG("%s\t\t 0x%012llx (0x%llX)", string, reinterpret_cast<uint64_t>(function) , reinterpret_cast<uint64_t>(function) - mem::module::main().base().as<uint64_t>())
 
 namespace Utility
 {

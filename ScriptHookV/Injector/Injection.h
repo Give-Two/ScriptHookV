@@ -21,7 +21,7 @@ enum INJECTION_MODE
 #define INJ_UNLINK_FROM_PEB 4
 #define INJ_FLAGS_ALL (INJ_ERASE_HEADER | INJ_FAKE_HEADER | INJ_UNLINK_FROM_PEB)
 
-HMODULE get_module_address(HANDLE hProc, const char* moduleName);
+HMODULE GetModuleInProcess(HANDLE hProc, const char* moduleName);
 DWORD InjectDLL(const char * szDllFile, HANDLE hProc, INJECTION_MODE Mode, bool HijackThread = false, DWORD Postinjection = 0, DWORD * ErrorCode = nullptr);
 
 #define INJ_ERR_SUCCESS					0x00000000
