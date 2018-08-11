@@ -20,7 +20,7 @@ public:
 
 	static bool Initialize();
 
-	static uint64_t* getGlobal(int globalId);
+	static PUINT64 getGlobal(int globalId);
 
 	static eGameState GetGameState();
 

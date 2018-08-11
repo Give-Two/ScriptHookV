@@ -11,9 +11,9 @@
 
 struct GlobalTable 
 {
-	__int64** GlobalBasePtr;
-	__int64* AddressOf(int index) const { return &GlobalBasePtr[index >> 18 & 0x3F][index & 0x3FFFF]; }
-	bool IsInitialised()const { return *GlobalBasePtr != NULL; }
+	PINT64* GlobalBasePtr;
+	PINT64 AddressOf(int index) const { return &GlobalBasePtr[index >> 18 & 0x3F][index & 0x3FFFF]; }
+	bool IsInitialised()const { return *GlobalBasePtr; }
 };	
 
 GlobalTable		globalTable;
@@ -40,7 +40,7 @@ bool ScriptEngine::Initialize()
 	if (!InputHook::Initialize()) 
 	{
 		LOG_ERROR("Failed to Initialize InputHook");
-		return 0;
+		return false;
 	}
 
 	// Get game state
@@ -58,7 +58,7 @@ bool ScriptEngine::Initialize()
 	// Get global table
 	if (auto globalTablePattern = "4C 8D 05 ? ? ? ? 4D 8B 08 4D 85 C9 74 11"_Scan)
 	{
-		globalTable.GlobalBasePtr = globalTablePattern.add(3).rip(4).as<__int64**>();
+		globalTable.GlobalBasePtr = globalTablePattern.add(3).rip(4).as<PINT64*>();
 		while (!globalTable.IsInitialised()) Sleep(100);
 		LOG_ADDRESS("globalTable", globalTable.GlobalBasePtr);
 	}
@@ -74,11 +74,13 @@ bool ScriptEngine::Initialize()
 	if (Hooking::Natives())
 	{
 		ASILoader::Initialize();
-	}
-	
-	LOG_PRINT("Initialization finished");
+		
+		LOG_PRINT("Initialization finished");
 
-	return true;
+		return true;
+	}
+
+	return false;
 }
 
 eGameState ScriptEngine::GetGameState() 
@@ -86,9 +88,9 @@ eGameState ScriptEngine::GetGameState()
 	return *gameState;
 }
 
-uint64_t* ScriptEngine::getGlobal(int globalId)
+PUINT64 ScriptEngine::getGlobal(int globalId)
 {
-	return reinterpret_cast<uint64_t*>(globalTable.AddressOf(globalId));
+	return reinterpret_cast<PUINT64>(globalTable.AddressOf(globalId));
 }
 
 uint32_t ScriptEngine::RegisterFile(const char* fullpath, const char* filename)
