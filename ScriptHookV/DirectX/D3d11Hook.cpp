@@ -167,6 +167,7 @@ void DX11Hook::ReleaseDevices()
 	Utility::SafeRelease(m_pDevice);
 	g_D3DHook.m_pSwapchain->Release();					
 	Utility::SafeRelease(m_pSwapchain);
+	m_stateSaver.release();
 	LOG_DEBUG("Unloaded D3DX11 Devices");
 }
 

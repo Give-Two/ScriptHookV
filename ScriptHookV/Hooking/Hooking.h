@@ -9,9 +9,9 @@ namespace Hooking
 	BOOL Natives();
 	BOOL NativeDetour(uint64_t hash, PVOID pHandler, PVOID* ppTarget);
 	template <typename T>
-	PDETOUR_TRAMPOLINE CreateDetour(T** pTarget, PVOID pHandler, const char *name = nullptr)
+	PDETOUR_TRAMPOLINE CreateDetour(T** pTarget, PVOID pHandler, const char *name)
 	{
-		bool unnamed = (!name);
+		bool unnamed = (name == nullptr);
 
 		// Should you check this before you try and hook something?
 		if (g_hooks.find(pTarget) != g_hooks.end()) 
@@ -41,17 +41,17 @@ namespace Hooking
 		if (unnamed)LOG_DEBUG("Hooked function pointer at '%llX'", normalise_base(pTarget));
 		else LOG_DEBUG("Hooked '%s' at '%llX'", name, normalise_base(pTarget));
 
-		g_hooks[pTarget] = pHandler;
+		g_hooks[pTarget] = std::make_pair(pHandler, name);
 
 		return pTrampoline;
 	}
 
-	VOID RemoveDetour(PVOID* ppTarget, PVOID pHandler);
+	VOID RemoveDetour(PVOID* ppTarget);
 
 	VOID RemoveAllDetours();
 };
 
-typedef std::map<PVOID*, PVOID> HooksMapType;
+typedef std::map<PVOID*, std::pair<PVOID, const char*>> HooksMapType;
 extern HooksMapType g_hooks;
 std::uintptr_t normalise_base(mem::handle address);
 

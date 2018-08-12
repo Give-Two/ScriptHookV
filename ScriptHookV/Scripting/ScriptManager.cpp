@@ -201,7 +201,7 @@ void ScriptManager::MainFiber()
 		}
 
 		static bool RemoveAllScriptsBool = false; const uint32_t RemoveAllScriptsKey = VK_NEXT; //Page Down
-		static bool  LoadAllScriptsBool = false; const uint32_t LoadAllScriptsKey = VK_PRIOR;//Page Up
+		static bool LoadAllScriptsBool = false; const uint32_t LoadAllScriptsKey = VK_PRIOR;//Page Up
 		static bool RemoveScriptHookBool = false; const uint32_t RemoveScriptHookKey = VK_END;
 
 		if (isKeyPressedOnce(RemoveAllScriptsBool, RemoveAllScriptsKey))
@@ -235,8 +235,6 @@ DWORD WINAPI ExitGtaVThread(LPVOID/*lpParameter*/)
 	g_D3DHook.ReleaseDevices();
 	Hooking::RemoveAllDetours();
 	FreeLibraryAndExitThread(Utility::GetOurModuleHandle(), ERROR_SUCCESS);
-	g_HookState = HookStateUnknown;
-	return ERROR_SUCCESS;
 }
 
 void ScriptManager::UnloadHook()
@@ -250,6 +248,7 @@ void ScriptManager::UnloadHook()
 	if (ConvertFiberToThread())
 	{
 		CloseHandle(g_MainFiber);
+		g_HookState = HookStateUnknown;
 		Utility::CreateElevatedThread(ExitGtaVThread);
 	}
 }
@@ -399,14 +398,14 @@ DLL_EXPORT UINT32 registerRawStreamingFile(const char* fileName, const char* reg
 	return rage::FileRegister(&textureID, fileName, true, registerAs, errorIfFailed) ? textureID : 0;
 }
 
-DLL_EXPORT PVOID createDetour(PVOID* pTarget, PVOID pHandler, const char* name = nullptr)
+DLL_EXPORT PVOID createDetour(PVOID* pTarget, PVOID pHandler, const char* name)
 {
 	return Hooking::CreateDetour(pTarget, pHandler, name);
 }
 
-DLL_EXPORT void removeDetour(PVOID* ppTarget, PVOID pHandler)
+DLL_EXPORT void removeDetour(PVOID* ppTarget)
 {
-	Hooking::RemoveDetour(ppTarget, pHandler);
+	Hooking::RemoveDetour(ppTarget);
 }
 
 

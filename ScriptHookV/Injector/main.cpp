@@ -49,7 +49,7 @@ int main()
 
 		if (isRetailKey)//RETAIL
 		{
-			LOG_DEBUG("Retail GTA V version detected.");
+			LOG_PRINT("Detected the retail version of GTAV.");
 			if (reg.GetValue().empty())
 			{
 				BREAK_WITH_ERROR("Reading GTA V install path.");
@@ -67,7 +67,7 @@ int main()
 		//STEAM
 		else if (isSteamKey)
 		{
-			LOG_DEBUG("Steam GTA V version detected.");
+			LOG_PRINT("Detected the steam version of GTAV.");
 			if (reg.GetValue(true).empty())
 			{
 				BREAK_WITH_ERROR("Reading GTA V install path.");
@@ -84,7 +84,7 @@ int main()
 		}
 
 		// Wait while target process is unavailable
-		LOG_DEBUG("Waiting for GTA5.exe process to become available...");
+		LOG_PRINT("Waiting for GTA5.exe process to become available...");
 		while (!dwProcessId) 
 		{
 			dwProcessId = Utility::GetProcessIDByName("GTA5.exe"); 
@@ -118,7 +118,7 @@ int main()
 	DWORD Err = 0;
 	DWORD Ret = 0;
 
-	LOG_DEBUG("Found GTA5.exe, PID: %lu\n", dwProcessId);
+	LOG_PRINT("Found GTA5.exe, PID: %lu\n", dwProcessId);
 
 	while (!hWindow)
 	{

@@ -56,5 +56,5 @@ IMPORT int getGameVersion();
 /* misc */
 IMPORT BYTE *getScriptHandleBaseAddress(int handle);
 IMPORT UINT32 registerRawStreamingFile(const char* fileName, const char* registerAs, bool errorIfFailed);
-IMPORT PVOID createDetour(PVOID* pTarget, PVOID pHandler, const char *name = nullptr);
-IMPORT void removeDetour(PVOID* ppTarget, PVOID pHandler);
+IMPORT PVOID createDetour(PVOID* pTarget, PVOID pHandler, const char *name);
+IMPORT void removeDetour(PVOID* ppTarget);

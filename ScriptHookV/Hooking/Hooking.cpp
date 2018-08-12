@@ -11,45 +11,51 @@
 
 HooksMapType g_hooks;
 
-VOID Hooking::RemoveDetour(PVOID* ppTarget, PVOID pHandler)
+VOID Hooking::RemoveDetour(PVOID* ppTarget)
 {
-	if (DetourTransactionBegin() != NO_ERROR)
-		return;
+	auto treo = g_hooks.find(ppTarget); 
 
-	if (DetourUpdateThread(GetCurrentThread()) != NO_ERROR)
+	if (treo == g_hooks.end())
 	{
-		DetourTransactionCommit();
+		LOG_ERROR("Couldn't remove %s at '%llX'", treo->second.second, normalise_base(ppTarget));	
 		return;
 	}
-
-	if (DetourDetach(ppTarget, pHandler) != NO_ERROR)
+	else
 	{
-		DetourTransactionCommit();
-		return;
+		LOG_DEBUG("Attempting to unhook %s at '%llX'", treo->second.second, normalise_base(ppTarget));
+		
+		if (DetourTransactionBegin() != NO_ERROR) 
+			return;
+
+		if (DetourUpdateThread(GetCurrentThread()) != NO_ERROR)
+		{
+			DetourTransactionCommit();
+			return;
+		}
+
+		if (DetourDetach(ppTarget, treo->second.first) != NO_ERROR)
+		{
+			DetourTransactionCommit();
+			return;
+		}
+
+		if (DetourTransactionCommit() != NO_ERROR)
+		{
+			DetourTransactionAbort();
+			return;
+		}
+
+		g_hooks.erase(treo);
+
+		LOG_DEBUG("Unhooking %s was successful", treo->second.second);
 	}
-
-	if (DetourTransactionCommit() != NO_ERROR)
-	{
-		DetourTransactionAbort();
-		return;
-	}
-
-	auto pair = g_hooks.find(ppTarget);
-	if (pair == g_hooks.end()) {
-
-		LOG_ERROR("Could not find function hook '%llX' to remove", normalise_base(ppTarget));
-		return;
-	}
-
-	LOG_DEBUG("Unhooked function pointer at '%llX'", normalise_base(ppTarget));
-	g_hooks.erase(pair);
 }
 
 VOID Hooking::RemoveAllDetours()
 {
 	for (const auto& pair : g_hooks)
 	{
-		RemoveDetour(pair.first, pair.second);
+		RemoveDetour(pair.first);
 	}
 }
 
@@ -108,10 +114,10 @@ BOOL Hooking::NativeDetour(uint64_t hash, PVOID pHandler, PVOID* ppTarget)
 			*ppTarget = (PVOID*)handler;
 
 			if (g_hooks.find(ppTarget) != g_hooks.end()) {
-				LOG_ERROR("%s is already hooked at '%p'", native.Name, ppTarget);
+				LOG_ERROR("%s is already hooked at '%llX'", native.Name, normalise_base(ppTarget));
 				return TRUE;
 			}
-
+			
 			if (DetourTransactionBegin() != NO_ERROR) return FALSE;
 
 			if (DetourUpdateThread(GetCurrentThread()) != NO_ERROR)
@@ -134,7 +140,7 @@ BOOL Hooking::NativeDetour(uint64_t hash, PVOID pHandler, PVOID* ppTarget)
 				return FALSE;
 			}
 
-			g_hooks[ppTarget] = pHandler;
+			g_hooks[ppTarget] = std::make_pair(pHandler, native.Name);
 
 			LOG_DEBUG("Hooked Native %s (0x%I64X) at '%p'", native.Name, native.NewHash, ppTarget);
 
