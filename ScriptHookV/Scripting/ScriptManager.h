@@ -61,14 +61,19 @@ public:
 	void					RemoveAllScripts();
 };
 
+typedef						void(*KeyboardHandler)(DWORD key, WORD repeats, BYTE scanCode, BOOL isExtended, BOOL isWithAlt, BOOL wasDownBefore, BOOL isUpNow);
+typedef						void(*TWndProcFn)(UINT uMsg, WPARAM wParam, LPARAM lParam);
+static						std::set<KeyboardHandler> g_keyboardFunctions;
+static						std::set<TWndProcFn> g_WndProcCb;
+
 namespace ScriptManager 
 {
 	void					WndProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+	void					MainFiber();
+	void					UnloadHook();
 }
 
-extern HANDLE g_MainFiber;
 extern ScriptThread	g_ScriptThread;
 extern ScriptThread	g_AdditionalThread;
 
-extern HANDLE g_MainFiber;
 #endif // __SCRIPT_MANAGER_H__

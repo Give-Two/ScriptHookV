@@ -18,6 +18,7 @@ struct GlobalTable
 
 GlobalTable		globalTable;
 eGameState *	gameState;
+eHookState		g_HookState;
 int				g_GameVersion;
 
 bool ScriptEngine::Initialize() 
@@ -77,8 +78,12 @@ bool ScriptEngine::Initialize()
 		
 		LOG_PRINT("Initialization finished");
 
+		g_HookState = HookStateRunning;
+
 		return true;
 	}
+
+	g_HookState = HookStateExiting;
 
 	return false;
 }

@@ -181,10 +181,10 @@ namespace Utility
 		return pi.hProcess;
 	}
 
-	void create_thread(LPTHREAD_START_ROUTINE thread)
+	void CreateElevatedThread(LPTHREAD_START_ROUTINE thread)
 	{
 		DWORD myThreadID;
-		HANDLE myHandle = CreateThread(0, 0, thread, 0, 0, &myThreadID);
+		HANDLE myHandle = CreateThread(0, 0, thread, 0, THREAD_PRIORITY_HIGHEST, &myThreadID);
 		CloseHandle(myHandle);
 	}
 

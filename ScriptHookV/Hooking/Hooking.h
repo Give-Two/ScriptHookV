@@ -47,6 +47,8 @@ namespace Hooking
 	}
 
 	VOID RemoveDetour(PVOID* ppTarget, PVOID pHandler);
+
+	VOID RemoveAllDetours();
 };
 
 typedef std::map<PVOID*, PVOID> HooksMapType;

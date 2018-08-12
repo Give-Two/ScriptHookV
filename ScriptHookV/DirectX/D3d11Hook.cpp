@@ -25,7 +25,7 @@ static bool windowedState = true;
 PDETOUR_TRAMPOLINE Present;
 LPVOID Hook_Present(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
 {
-	if (!g_D3DHook.m_IsResizing)
+	if (g_HookState == HookStateRunning && !g_D3DHook.m_IsResizing)
 	{
 		if (g_D3DHook.m_pSwapchain == nullptr)
 		{
@@ -57,15 +57,20 @@ LPVOID Hook_Present(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
 PDETOUR_TRAMPOLINE ResizeBuffers;
 LPVOID Hook_ResizeBuffers(IDXGISwapChain *chain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
 {
-	g_D3DHook.m_IsResizing = true;
+	if (g_HookState == HookStateRunning)
+	{
+		g_D3DHook.m_IsResizing = true;
 
-	g_D3DHook.ReleaseDevices();
+		g_D3DHook.ReleaseDevices();
 
-	RCast(Hook_ResizeBuffers, ResizeBuffers)(chain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+		RCast(Hook_ResizeBuffers, ResizeBuffers)(chain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 
-	g_D3DHook.m_IsResizing = false;
+		g_D3DHook.m_IsResizing = false;
 
-	return nullptr;
+		return nullptr;
+	}
+
+	return RCast(Hook_ResizeBuffers, ResizeBuffers)(chain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 }
 
 //====================================================================================================================================================================
@@ -152,10 +157,16 @@ void DX11Hook::InitializeDevices()
 
 void DX11Hook::ReleaseDevices()
 {
-	g_D3DHook.m_pRenderTargetTexture->Release();
-	g_D3DHook.m_pRenderTargetView->Release();
-	g_D3DHook.m_pContext->Release();
-	g_D3DHook.m_pDevice->Release();
+	g_D3DHook.m_pRenderTargetTexture->Release();		
+	Utility::SafeRelease(m_pRenderTargetTexture);
+	g_D3DHook.m_pRenderTargetView->Release();			
+	Utility::SafeRelease(m_pRenderTargetView);
+	g_D3DHook.m_pContext->Release();					
+	Utility::SafeRelease(m_pContext);
+	g_D3DHook.m_pDevice->Release();						
+	Utility::SafeRelease(m_pDevice);
+	g_D3DHook.m_pSwapchain->Release();					
+	Utility::SafeRelease(m_pSwapchain);
 	LOG_DEBUG("Unloaded D3DX11 Devices");
 }
 

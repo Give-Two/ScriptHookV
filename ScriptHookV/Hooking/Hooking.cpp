@@ -1,4 +1,9 @@
 #include "Hooking.h"
+
+#include "..\Input\InputHook.h"
+
+#include "..\DirectX\D3d11Hook.h"
+
 #include "..\Scripting\ScriptEngine.h"
 #include "..\Scripting\NativeInvoker.h"
 #include "..\Scripting\ScriptThread.h"
@@ -40,6 +45,14 @@ VOID Hooking::RemoveDetour(PVOID* ppTarget, PVOID pHandler)
 	g_hooks.erase(pair);
 }
 
+VOID Hooking::RemoveAllDetours()
+{
+	for (const auto& pair : g_hooks)
+	{
+		RemoveDetour(pair.first, pair.second);
+	}
+}
+
 std::uintptr_t normalise_base(mem::handle address)
 {
 	auto module = mem::module::main();
@@ -57,27 +70,20 @@ std::uintptr_t normalise_base(mem::handle address)
 PVOID GAME_WAIT = NULL;
 PVOID MY_WAIT(scrNativeCallContext *cxt)
 {
-	static scrThread* target_thread = nullptr;
-
-	scrThread* current_thread = GetActiveThread();
-
-	// do this while script::wait
-	if (target_thread && current_thread->m_ctx.State == ThreadStateIdle)
+	switch (g_HookState)
 	{
-		if (current_thread->m_ctx.ScriptHash != g_ThreadHash)
+		case HookStateRunning:
 		{
-			SetActiveThread(target_thread);
-			g_AdditionalThread.DoRun();
-			SetActiveThread(current_thread);
-		}
-	}
-	else if (current_thread->m_ctx.State == ThreadStateRunning)
-	{
-		if (current_thread->m_ctx.ScriptHash == g_ThreadHash)
+			ScriptManager::MainFiber();
+		} break;
+
+		case HookStateExiting:
 		{
-			if (target_thread == nullptr) target_thread = current_thread;
-			g_ScriptThread.DoRun();
-		}
+			ScriptManager::UnloadHook();
+		} break;
+
+		default:
+			break;
 	}
 
 	return reinterpret_cast<decltype(&MY_WAIT)>(GAME_WAIT)(cxt);

@@ -67,7 +67,7 @@ namespace Utility
 	DWORD				GetProcessIDByName(const std::string& processName);
 	HANDLE				StartProcessPaused(LPCTSTR lpApplicationName, PHANDLE ptr_thread);
 	void				StartProcess(LPCTSTR lpApplicationName);
-	void				create_thread(LPTHREAD_START_ROUTINE thread);
+	void				CreateElevatedThread(LPTHREAD_START_ROUTINE thread);
 	void				killProcessByName(const char *filename);
 
 	bool				SetPrivilege(const char * szPrivilege, bool bState = true);

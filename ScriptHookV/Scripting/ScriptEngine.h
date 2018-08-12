@@ -14,6 +14,13 @@ enum eGameState
 	GameStateLoadingSP_MP = 6
 };
 
+enum eHookState
+{
+	HookStateRunning,
+	HookStateExiting,
+	HookStateUnknown = -1
+};	extern eHookState  g_HookState;
+
 class ScriptEngine 
 {
 public:
