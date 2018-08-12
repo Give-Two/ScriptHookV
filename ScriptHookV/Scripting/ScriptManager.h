@@ -54,11 +54,11 @@ private:
 public:
 
 	virtual void			DoRun();
-	virtual void			Reset();
 	void					AddScript( HMODULE module, void( *fn )( ));
 	void					RemoveScript( void( *fn )( ) );
 	void					RemoveScript( HMODULE module);
 	void					RemoveAllScripts();
+	size_t					ScriptCount();
 };
 
 typedef						void(*KeyboardHandler)(DWORD key, WORD repeats, BYTE scanCode, BOOL isExtended, BOOL isWithAlt, BOOL wasDownBefore, BOOL isUpNow);

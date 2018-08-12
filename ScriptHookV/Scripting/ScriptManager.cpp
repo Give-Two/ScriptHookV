@@ -98,14 +98,7 @@ void ScriptThread::DoRun()
 	}
 }
 
-void ScriptThread::Reset() 
-{
-	g_AdditionalThread.RemoveAllScripts();
-    g_ScriptThread.RemoveAllScripts();
-    ASILoader::Initialize();
-}
-
-void ScriptThread::AddScript( HMODULE module, void( *fn )( ) ) 
+void ScriptThread::AddScript( HMODULE module, void(*fn)()) 
 {
     const std::string moduleName = Utility::GetModuleNameWithoutExtension( module);
 
@@ -122,48 +115,48 @@ void ScriptThread::AddScript( HMODULE module, void( *fn )( ) )
 }
 
 void ScriptThread::RemoveScript(HMODULE module)
-{
-	const std::string name = Utility::GetModuleNameWithoutExtension(module);
-
-	if (m_scripts.size())
+{	
+	std::string msg = FMT("Removed '%s'", Utility::GetModuleNameWithoutExtension(module).c_str());
+	std::shared_ptr<Script> script;
+	if (Utility::GetMapValue(m_scripts, module, script))
 	{
-		auto foundIter = m_scripts.find(module);
-		if (foundIter != m_scripts.end())
-		{
-			m_scripts.erase(foundIter);
-			FreeLibrary(module);
-			ScriptEngine::Notification(FMT("Removed '%s'", name.c_str()));
-			LOG_PRINT("Unregistered script '%s'", name.c_str());
-		}
+		script->Wait(0);
+		m_scripts.erase(module);
+		FreeLibrary(module);
+		CloseHandle(module);
+		ScriptEngine::Notification(msg);
+		LOG_PRINT(msg.c_str());
+		script.reset();
 	}
 }
 
 void ScriptThread::RemoveScript(void(*fn)()) 
 {
-    for ( auto it = m_scripts.begin(); it != m_scripts.end(); it++ ) 
+	for (const auto & pair : m_scripts)
 	{
-        auto pair = *it;
-
-		if ( pair.second->GetCallbackFunction() == fn ) 
+		if (pair.second->GetCallbackFunction() == fn)
 		{
-            RemoveScript(pair.first);
-        }
-    }
+			RemoveScript(pair.first);
+		}
+	}
 }
 
 void ScriptThread::RemoveAllScripts()
-{
-	if (g_MainFiber != nullptr && GetCurrentFiber() != g_MainFiber)
-		SwitchToFiber(g_MainFiber);
-	
-	if (std::size(m_scripts) > 0)
+{	
+	if (ScriptCount())
 	{
 		for (auto & pair : m_scripts)
 		{
 			RemoveScript(pair.first);
-		}	m_scripts.clear();
+		}
 		Utility::playwindowsSound("Windows Default.wav");
+		m_scripts.clear();
 	}
+}
+
+size_t ScriptThread::ScriptCount()
+{
+	return m_scripts.size();
 }
 
 /* ####################### SCRIPTMANAGER #######################*/
@@ -208,7 +201,7 @@ void ScriptManager::MainFiber()
 		}
 
 		static bool RemoveAllScriptsBool = false; const uint32_t RemoveAllScriptsKey = VK_NEXT; //Page Down
-		static bool ReloadAllScriptsBool = false; const uint32_t ReloadAllScriptsKey = VK_PRIOR;//Page Up
+		static bool  LoadAllScriptsBool = false; const uint32_t LoadAllScriptsKey = VK_PRIOR;//Page Up
 		static bool RemoveScriptHookBool = false; const uint32_t RemoveScriptHookKey = VK_END;
 
 		if (isKeyPressedOnce(RemoveAllScriptsBool, RemoveAllScriptsKey))
@@ -217,10 +210,10 @@ void ScriptManager::MainFiber()
 			g_ScriptThread.RemoveAllScripts();
 		}
 
-		if (isKeyPressedOnce(ReloadAllScriptsBool, ReloadAllScriptsKey))
+		if (isKeyPressedOnce(LoadAllScriptsBool, LoadAllScriptsKey))
 		{
-			g_AdditionalThread.Reset();
-			g_ScriptThread.Reset();
+			if (!g_ScriptThread.ScriptCount())
+				ASILoader::Initialize();
 		}
 
 		if (isKeyPressedOnce(RemoveScriptHookBool, RemoveScriptHookKey))
