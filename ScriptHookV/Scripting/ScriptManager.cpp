@@ -232,8 +232,8 @@ void ScriptManager::MainFiber()
 DWORD WINAPI ExitGtaVThread(LPVOID/*lpParameter*/)
 {
 	InputHook::Remove();
-	g_D3DHook.ReleaseDevices();
-	Hooking::RemoveAllDetours();
+	g_D3DHook.ReleaseDevices(true);
+	Hooking::UnHookNatives();
 	FreeLibraryAndExitThread(Utility::GetOurModuleHandle(), ERROR_SUCCESS);
 }
 
@@ -397,17 +397,6 @@ DLL_EXPORT UINT32 registerRawStreamingFile(const char* fileName, const char* reg
 	UINT32 textureID;
 	return rage::FileRegister(&textureID, fileName, true, registerAs, errorIfFailed) ? textureID : 0;
 }
-
-DLL_EXPORT PVOID createDetour(PVOID* pTarget, PVOID pHandler, const char* name)
-{
-	return Hooking::CreateDetour(pTarget, pHandler, name);
-}
-
-DLL_EXPORT void removeDetour(PVOID* ppTarget)
-{
-	Hooking::RemoveDetour(ppTarget);
-}
-
 
 
 

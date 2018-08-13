@@ -6,6 +6,8 @@
 #include "..\Utility\General.h"
 #include "..\Utility\Log.h"
 
+using namespace Hooking;
+
 DX11Hook g_D3DHook;
 
 //texture declariations
@@ -22,8 +24,8 @@ static bool windowedState = true;
 // Function hook stubs
 
 // IDXGISwapChain::Present()
-PDETOUR_TRAMPOLINE Present;
-LPVOID Hook_Present(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
+DetourHook<HRESULT WINAPI(IDXGISwapChain*, UINT, UINT)> Detour_Present;
+HRESULT WINAPI Present(IDXGISwapChain* chain, UINT syncInterval, UINT flags)
 {
 	if (g_HookState == HookStateRunning && !g_D3DHook.m_IsResizing)
 	{
@@ -40,7 +42,7 @@ LPVOID Hook_Present(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
 
 			if (windowedState != g_D3DHook.m_windowedMode)
 			{
-				g_D3DHook.ReleaseDevices();
+				g_D3DHook.ReleaseDevices(false);
 				windowedState = g_D3DHook.m_windowedMode;
 			}
 			else
@@ -50,29 +52,28 @@ LPVOID Hook_Present(IDXGISwapChain *chain, UINT SyncInterval, UINT Flags)
 		}
 	}
 
-	return RCast(Hook_Present, Present)(chain, SyncInterval, Flags);
+	return Detour_Present(chain, syncInterval, flags);
 }
 
 // IDXGISwapChain::ResizeBuffers()
-PDETOUR_TRAMPOLINE ResizeBuffers;
-LPVOID Hook_ResizeBuffers(IDXGISwapChain *chain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
+DetourHook<HRESULT WINAPI(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT)> Detour_ResizeBuffers;
+HRESULT WINAPI ResizeBuffers(IDXGISwapChain* chain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
 {
 	if (g_HookState == HookStateRunning)
 	{
 		g_D3DHook.m_IsResizing = true;
 
-		g_D3DHook.ReleaseDevices();
+		g_D3DHook.ReleaseDevices(false);
 
-		RCast(Hook_ResizeBuffers, ResizeBuffers)(chain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+		Detour_ResizeBuffers(chain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 
 		g_D3DHook.m_IsResizing = false;
 
-		return nullptr;
+		return HRESULT();
 	}
 
-	return RCast(Hook_ResizeBuffers, ResizeBuffers)(chain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+	return Detour_ResizeBuffers(chain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 }
-
 //====================================================================================================================================================================
 //Ensure SwapChain Vtable and perform function hooks
 
@@ -110,12 +111,10 @@ bool DX11Hook::InitializeHooks()
 	if (auto swapchain = rage::GetGtaSwapChain())
 	{
 		PVOID* pVTable = *(PVOID**)swapchain;
-		
-		auto p_Present = pVTable[SC_PRESENT];
-		Present = Hooking::CreateDetour(&p_Present, &Hook_Present, "IDXGISwapChainPresent");
 
-		auto p_ResizeBuffers = pVTable[SC_RESIZEBUFFERS];
-		ResizeBuffers = Hooking::CreateDetour(&p_ResizeBuffers, &Hook_ResizeBuffers, "IDXGISwapChainResizeBuffers");
+		Detour_Present.Hook(RCast(Present, pVTable[SC_PRESENT]), &Present, "IDXGISwapChainPresent");
+
+		Detour_ResizeBuffers.Hook(RCast(ResizeBuffers, pVTable[SC_RESIZEBUFFERS]), &ResizeBuffers, "IDXGISwapChainResizeBuffers");
 
 		return true;
 	}
@@ -155,7 +154,7 @@ void DX11Hook::InitializeDevices()
 	}
 }
 
-void DX11Hook::ReleaseDevices()
+void DX11Hook::ReleaseDevices(bool unhook)
 {
 	g_D3DHook.m_pRenderTargetTexture->Release();		
 	Utility::SafeRelease(m_pRenderTargetTexture);
@@ -169,6 +168,12 @@ void DX11Hook::ReleaseDevices()
 	Utility::SafeRelease(m_pSwapchain);
 	m_stateSaver.release();
 	LOG_DEBUG("Unloaded D3DX11 Devices");
+
+	if (unhook)
+	{
+		Detour_ResizeBuffers.UnHook();
+		Detour_Present.UnHook();
+	}
 }
 
 void DX11Hook::Draw()
@@ -355,13 +360,11 @@ StateSaver::StateSaver() :
 	}
 }
 
-
 // Destruct
 StateSaver::~StateSaver()
 {
 	releaseSavedState();
 }
-
 
 // Save all states that are changed by the font-wrapper when drawing a string
 bool StateSaver::saveCurrentState(ID3D11DeviceContext *pContext)

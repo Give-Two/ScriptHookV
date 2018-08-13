@@ -72,7 +72,8 @@ bool ScriptEngine::Initialize()
     while (GetGameState() != GameStatePlaying) Sleep(100);
 
 	LOG_PRINT("Performing native hooking...");
-	if (Hooking::Natives())
+	
+	if (Hooking::HookNatives())
 	{
 		ASILoader::Initialize();
 		

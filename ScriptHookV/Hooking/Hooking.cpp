@@ -9,57 +9,9 @@
 #include "..\Scripting\ScriptThread.h"
 #include "..\Scripting\ScriptManager.h"
 
-HooksMapType g_hooks;
+using namespace Hooking;
 
-VOID Hooking::RemoveDetour(PVOID* ppTarget)
-{
-	auto treo = g_hooks.find(ppTarget); 
-
-	if (treo == g_hooks.end())
-	{
-		LOG_ERROR("Couldn't remove %s at '%llX'", treo->second.second, normalise_base(ppTarget));	
-		return;
-	}
-	else
-	{
-		LOG_DEBUG("Attempting to unhook %s at '%llX'", treo->second.second, normalise_base(ppTarget));
-		
-		if (DetourTransactionBegin() != NO_ERROR) 
-			return;
-
-		if (DetourUpdateThread(GetCurrentThread()) != NO_ERROR)
-		{
-			DetourTransactionCommit();
-			return;
-		}
-
-		if (DetourDetach(ppTarget, treo->second.first) != NO_ERROR)
-		{
-			DetourTransactionCommit();
-			return;
-		}
-
-		if (DetourTransactionCommit() != NO_ERROR)
-		{
-			DetourTransactionAbort();
-			return;
-		}
-
-		g_hooks.erase(treo);
-
-		LOG_DEBUG("Unhooking %s was successful", treo->second.second);
-	}
-}
-
-VOID Hooking::RemoveAllDetours()
-{
-	for (const auto& pair : g_hooks)
-	{
-		RemoveDetour(pair.first);
-	}
-}
-
-std::uintptr_t normalise_base(mem::handle address)
+std::uintptr_t Hooking::normalise_base(mem::handle address)
 {
 	auto module = mem::module::main();
 
@@ -73,82 +25,43 @@ std::uintptr_t normalise_base(mem::handle address)
 
 // Natives
 
-PVOID GAME_WAIT = NULL;
-PVOID MY_WAIT(scrNativeCallContext *cxt)
+DetourHook<void(scrNativeCallContext*)> Detour_System_Wait;
+void System_Wait(scrNativeCallContext* context)
 {
 	switch (g_HookState)
 	{
-		case HookStateRunning:
-		{
-			ScriptManager::MainFiber();
-		} break;
-
-		case HookStateExiting:
-		{
-			ScriptManager::UnloadHook();
-		} break;
-
-		default:
-			break;
-	}
-
-	return reinterpret_cast<decltype(&MY_WAIT)>(GAME_WAIT)(cxt);
-}
-
-BOOL Hooking::Natives()
-{
-	return TRUE
-		// native hooks	
-		&& NativeDetour(0x4EDE34FBADD967A6, &MY_WAIT, &GAME_WAIT)
-;}
-
-BOOL Hooking::NativeDetour(uint64_t hash, PVOID pHandler, PVOID* ppTarget)
-{
-	auto native = NativeInvoker::NativeInfo(hash);
-
-	if (native.NewHash)
+	case HookStateRunning:
 	{
-		auto handler = NativeInvoker::GetNativeHandler(native);
-		if (handler)
-		{
-			*ppTarget = (PVOID*)handler;
+		ScriptManager::MainFiber();
+	} break;
 
-			if (g_hooks.find(ppTarget) != g_hooks.end()) {
-				LOG_ERROR("%s is already hooked at '%llX'", native.Name, normalise_base(ppTarget));
-				return TRUE;
-			}
-			
-			if (DetourTransactionBegin() != NO_ERROR) return FALSE;
+	case HookStateExiting:
+	{
+		ScriptManager::UnloadHook();
+	} break;
 
-			if (DetourUpdateThread(GetCurrentThread()) != NO_ERROR)
-			{
-				DetourTransactionCommit();
-				return FALSE;
-			}
-
-			PDETOUR_TRAMPOLINE pTrampoline = NULL;
-
-			if (DetourAttachEx(ppTarget, pHandler, &pTrampoline, NULL, NULL) != NO_ERROR)
-			{
-				DetourTransactionCommit();
-				return FALSE;
-			}
-
-			if (DetourTransactionCommit() != NO_ERROR)
-			{
-				DetourTransactionAbort();
-				return FALSE;
-			}
-
-			g_hooks[ppTarget] = std::make_pair(pHandler, native.Name);
-
-			LOG_DEBUG("Hooked Native %s (0x%I64X) at '%p'", native.Name, native.NewHash, ppTarget);
-
-			return TRUE;
-		}
+	default:
+		break;
 	}
 
-	LOG_DEBUG("Failed to find %s", native.Name);
-
-	return FALSE;
+	return Detour_System_Wait(context);
 }
+
+bool Hooking::HookNatives()
+{
+	auto native = NativeInvoker::NativeInfo(0x4EDE34FBADD967A6);
+	if (auto handler = NativeInvoker::GetNativeHandler(native))
+	{
+		Detour_System_Wait.Hook(handler, System_Wait, "System_Wait");
+		return true;
+	}
+
+	return false;
+}
+
+void Hooking::UnHookNatives()
+{
+	Detour_System_Wait.UnHook();
+}
+		
+	

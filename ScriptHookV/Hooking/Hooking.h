@@ -6,53 +6,106 @@
 
 namespace Hooking
 {
-	BOOL Natives();
-	BOOL NativeDetour(uint64_t hash, PVOID pHandler, PVOID* ppTarget);
-	template <typename T>
-	PDETOUR_TRAMPOLINE CreateDetour(T** pTarget, PVOID pHandler, const char *name)
+	template <typename F>
+	class DetourHook;
+
+	template <typename R, typename... T>
+	class DetourHook<R(T...)>
 	{
-		bool unnamed = (name == nullptr);
+	public:
+		using F = R(*)(T...);
 
-		// Should you check this before you try and hook something?
-		if (g_hooks.find(pTarget) != g_hooks.end()) 
+	protected:
+		F _original;
+		F _detour;
+		const char* _name;
+		DETOUR_TRAMPOLINE* _trampoline;
+
+	public:
+		DetourHook()
+			: _original(nullptr)
+			, _detour(nullptr)
+			, _trampoline(nullptr)
+			, _name(nullptr)
+		{ }
+
+		~DetourHook()
 		{
-			if (unnamed) 
+			if (_trampoline)
 			{
-				LOG_ERROR("Function Pointer is already hooked at %llX", normalise_base(pTarget));
+				UnHook();
+
+				MessageBoxA(NULL, FMT("A hook at %llX was not removed", normalise_base(_original)).c_str(), "Error", MB_OK);
 			}
-			else 
-			{
-				LOG_ERROR("%s is already hooked at %llX", name, normalise_base(pTarget));
-			}
-			return nullptr;
 		}
 
-		DetourTransactionBegin();
-		DetourUpdateThread(GetCurrentThread());
-		PDETOUR_TRAMPOLINE pTrampoline = nullptr;
-		DetourAttachEx(pTarget, pHandler, &pTrampoline, nullptr, nullptr);
-		if (DetourTransactionCommit() != NO_ERROR) 
+		bool Hook(F original, F detour, const char* name)
 		{
-			if (unnamed) LOG_ERROR("Could not hook '%llX'", normalise_base(pTarget));
-			else LOG_ERROR("Could not hook '%s'", name);
-			DetourTransactionAbort(); // Really necessary?
-			return nullptr;
+			_original = original;
+			_detour = detour;
+			_name = name;
+
+			DetourTransactionBegin();
+			DetourUpdateThread(GetCurrentThread());
+
+			DetourAttachEx(reinterpret_cast<void**>(&_original), _detour, &_trampoline, NULL, NULL);
+
+			if (DetourTransactionCommit() != NO_ERROR)
+			{
+				LOG_ERROR("Could not hook '%s'", name);
+				DetourTransactionAbort(); 
+				return nullptr;
+			}
+
+			LOG_DEBUG("Hooked %s at %llX", name, normalise_base(original));
+
+			return true;
 		}
-		if (unnamed)LOG_DEBUG("Hooked function pointer at '%llX'", normalise_base(pTarget));
-		else LOG_DEBUG("Hooked '%s' at '%llX'", name, normalise_base(pTarget));
 
-		g_hooks[pTarget] = std::make_pair(pHandler, name);
+		bool UnHook()
+		{
+			DetourTransactionBegin();
+			DetourUpdateThread(GetCurrentThread());
 
-		return pTrampoline;
-	}
+			DetourDetach(reinterpret_cast<void**>(&_original), _detour);
 
-	VOID RemoveDetour(PVOID* ppTarget);
+			bool success = DetourTransactionCommit() == NO_ERROR;
 
-	VOID RemoveAllDetours();
+			if (!success)
+			{
+				LOG_ERROR("Could not unhook '%s'", _name);
+				DetourTransactionAbort();
+			}
+			else
+			{
+				LOG_DEBUG("Unhooked %s at %llX", _name, normalise_base(_original));
+			}
+
+			_name = nullptr;
+			_original = nullptr;
+			_detour = nullptr;
+			_trampoline = nullptr;
+
+			return success;
+		}
+
+		R operator()(T&... args)
+		{
+			return reinterpret_cast<F>(_trampoline)(std::forward<T>(args)...);
+		}
+	};
+
+	template <typename R, typename... T>
+	class DetourHook<R(*)(T...)> : public DetourHook<R(T...)> { };
+
+	template <typename R, typename... T>
+	class DetourHook<R(&)(T...)> : public DetourHook<R(T...)> { };
+
+	bool HookNatives();
+
+	void UnHookNatives();
+
+	std::uintptr_t normalise_base(mem::handle address);
 };
-
-typedef std::map<PVOID*, std::pair<PVOID, const char*>> HooksMapType;
-extern HooksMapType g_hooks;
-std::uintptr_t normalise_base(mem::handle address);
 
 #endif // __HOOKING_H__
