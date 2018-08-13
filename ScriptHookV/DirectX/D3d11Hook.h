@@ -110,7 +110,7 @@ public:
 	std::unique_ptr<SpriteBatch> m_pSpriteBatch;
 	std::unique_ptr<CommonStates> m_pCommonState;
 	std::unique_ptr<StateSaver> m_stateSaver;
-	bool m_windowedMode = true;
+	BOOL m_fullscreenState = -1;
 	bool m_restoreState = false;
 	bool m_IsResizing = false;
 };

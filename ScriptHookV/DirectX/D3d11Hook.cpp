@@ -18,12 +18,10 @@ std::vector<ScriptTex> DrawTextureArray;
 std::vector<ReloadTex> ReloadArray;
 int DrawTextureArrayIndex = 0;
 static Vector2 windowSize = Vector2();
-static bool windowedState = true;
-
 //====================================================================================================================================================================
 // Function hook stubs
 
-// IDXGISwapChain::Present()
+// IDXGISwapChain::Present
 DetourHook<HRESULT WINAPI(IDXGISwapChain*, UINT, UINT)> Detour_Present;
 HRESULT WINAPI Present(IDXGISwapChain* chain, UINT syncInterval, UINT flags)
 {
@@ -37,25 +35,31 @@ HRESULT WINAPI Present(IDXGISwapChain* chain, UINT syncInterval, UINT flags)
 		else
 		{
 			BOOL fullscreenState;
-			chain->GetFullscreenState(&fullscreenState, nullptr);
-			g_D3DHook.m_windowedMode = !fullscreenState;
+			if (SUCCEEDED(chain->GetFullscreenState(&fullscreenState, nullptr)))
+			{
+				if (fullscreenState != g_D3DHook.m_fullscreenState)
+				{
+					g_D3DHook.m_IsResizing = true;
 
-			if (windowedState != g_D3DHook.m_windowedMode)
-			{
-				g_D3DHook.ReleaseDevices(false);
-				windowedState = g_D3DHook.m_windowedMode;
+					g_D3DHook.ReleaseDevices(false);
+
+					g_D3DHook.m_fullscreenState = fullscreenState;
+
+					Detour_Present(chain, syncInterval, flags);
+
+					g_D3DHook.m_IsResizing = false;
+				}
+				
 			}
-			else
-			{
-				g_D3DHook.Draw();
-			}
+
+			g_D3DHook.Draw();
 		}
 	}
 
 	return Detour_Present(chain, syncInterval, flags);
 }
 
-// IDXGISwapChain::ResizeBuffers()
+// IDXGISwapChain::ResizeBuffers
 DetourHook<HRESULT WINAPI(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT)> Detour_ResizeBuffers;
 HRESULT WINAPI ResizeBuffers(IDXGISwapChain* chain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
 {
@@ -74,6 +78,7 @@ HRESULT WINAPI ResizeBuffers(IDXGISwapChain* chain, UINT BufferCount, UINT Width
 
 	return Detour_ResizeBuffers(chain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 }
+
 //====================================================================================================================================================================
 //Ensure SwapChain Vtable and perform function hooks
 
@@ -149,8 +154,12 @@ void DX11Hook::InitializeDevices()
 			ReloadTextures();
 		}
 
-		windowSize = GetResolution();
-		windowedState = m_windowedMode;
+		BOOL fullscreenState;
+		if (SUCCEEDED(m_pSwapchain->GetFullscreenState(&fullscreenState, nullptr)))
+		{
+			m_fullscreenState = fullscreenState;
+			windowSize = GetResolution();
+		}
 	}
 }
 
