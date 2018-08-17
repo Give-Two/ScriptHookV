@@ -1,6 +1,4 @@
-
-#include "General.h"
-
+#include "Log.h"
 #include <time.h>
 
 const std::string fileName = "ScriptHookV";
@@ -30,7 +28,7 @@ namespace Utility
 		return buff;
 	}
 
-	void Log::LogToFile(eLogType logType, std::string text)
+	void Log::LogToFile(eLogType logType, const std::string& text)
 	{
 		static std::string path = GetOurModuleFolder() + "\\" + fileName + ".log";
 
@@ -46,6 +44,17 @@ namespace Utility
 		else logFile.open(path, std::ofstream::out | std::ofstream::app);
 
 		logFile << GetTimeFormatted().c_str() << " " << logTypeToFormatMap[logType].c_str() << " " << text.c_str() << std::endl;
+	}
+
+	void Log::LogToFile(const std::string& file, const std::string& text)
+	{
+		std::ofstream LOG;
+
+		LOG.open(Utility::GetOurModuleFolder() + "\\" + file + ".txt", std::ofstream::out | std::ofstream::app);
+
+		LOG << text.c_str() << std::endl;
+
+		LOG.close();
 	}
 
 	Log * GetLog() 
