@@ -19,7 +19,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 		case DLL_PROCESS_ATTACH: 
 		{
 			SetOurModuleHandle(hModule);
-			//Memory::pattern("48 8D 4D AF E8 ? ? ? ? 84 C0 74 1F").count(1).get(0).get<void>(0x4B);
+			
 			// no launcher check
 			if (auto p_launcherCheck = "E8 ? ? ? ? 84 C0 75 0C B2 01 B9 2F"_Scan) p_launcherCheck.nop(21);
 			
@@ -40,7 +40,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 				g_GameVersion = -1;
 				auto file = GetOurModuleFolder() + "\\Native_Registration.txt";
 				if (DoesFileExist(file.c_str())) remove(file.c_str());
-				LOG_FILE("Registration", "%s", versionString.c_str());
+				LOG_FILE("Native_Registration", "%s", versionString.c_str());
 				CreateElevatedThread([](LPVOID)->DWORD
 				{ 
 					Hooking::HookFunctions();
