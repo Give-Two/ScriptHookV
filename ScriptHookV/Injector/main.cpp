@@ -7,8 +7,11 @@ int main()
 {
 	/* Configurable Settings */
 
+	//Target process
+	const std::string exeName = "GTA5.exe";
+
 	//DLL to inject
-	LPCSTR dllName = "ScriptHookV.dll";
+	const std::string dllName = "ScriptHookV.dll";
 
 	//Hijack an existing thread ? false = create one
 	bool ThreadHijacking = false;
@@ -21,10 +24,7 @@ int main()
 	//DLL Header Options - INJ_ERASE_HEADER | INJ_FAKE_HEADER  | INJ_UNLINK_FROM_PEB | INJ_FLAGS_ALL (All of these Options)
 	DWORD HeaderOption = NULL;
 
-	HWND hWindow = NULL;
-	HANDLE hProcess = NULL;
-	DWORD dwProcessId = 0;
-	char * cpDllFile = nullptr;
+	// Registry entry
 	std::string sExecutablePath;
 	bool isRetailKey = false;
 	bool isSteamKey = false;
@@ -32,14 +32,16 @@ int main()
 	// first truncated entry
 	LOG_PRINT("\n");
 
-	//Fuck off the ugly console;
+	// console window removal;
 	FreeConsole();
 
 	Utility::SetOurModuleHandle(GetModuleHandle(NULL));
 
-	if (dwProcessId = Utility::GetProcessIDByName("GTA5.exe")) goto DO_INJECT;
+	HANDLE hProcess = NULL;
 
-	else
+	if (Utility::GetProcess(exeName, hProcess)) goto DO_INJECT;
+
+	if (!hProcess)
 	{
 		Registry reg;	
 
@@ -84,14 +86,13 @@ int main()
 		}
 
 		// Wait while target process is unavailable
-		LOG_PRINT("Waiting for GTA5.exe process to become available...");
-		while (!dwProcessId) 
-		{
-			dwProcessId = Utility::GetProcessIDByName("GTA5.exe"); 
-			
+		LOG_DEBUG("Waiting for %s process to become available...", exeName.c_str());
+
+		while (!Utility::GetProcess(exeName, hProcess))
+		{	
 			if (isRetailKey)
 			{
-				if (!Utility::IsProcessRunning("GTAVLauncher.exe"))
+				if (!Utility::GetProcessID("GTAVLauncher.exe"))
 				{
 					BREAK_WITH_ERROR("GTAVLauncher.exe Is no longer running, aborting injection");
 				}
@@ -103,39 +104,39 @@ int main()
 	
 	DO_INJECT:
 
+	// Ensure we have the process open
+	if (!hProcess)
+		BREAK_WITH_ERROR(FMT("Opening %s.", exeName.c_str()).c_str());
+
+	LOG_DEBUG("Found %s, PID: %lu", exeName.c_str(), GetProcessId(hProcess));
+
 	// Get full file path
-	cpDllFile = new char[MAX_PATH];
-	if (!GetFullPathName(dllName, MAX_PATH, cpDllFile, 0))
-		BREAK_WITH_ERROR("Unable to find DLL to inject");
+	const char* cpDllFile = Utility::GetNamedModuleFolder(dllName, true).c_str();
+	if (!cpDllFile)
+		BREAK_WITH_ERROR(FMT("Unable to find %s to inject", dllName.c_str()).c_str());
 
-	Utility::SetPrivilege("SeDebugPrivilege", true);
+	// Wait for the window
+	HWND hWindow = NULL;
+	while (!hWindow)
+	{
+		doOnce(LOG_DEBUG("Waiting for %s window to become visible...", exeName.c_str()));
+		hWindow = FindWindowA("grcWindow", NULL);
+		Sleep(1000);
+	}
 
+	// Check if our dll is already injected
+	if (!GetModuleInProcess(hProcess, cpDllFile))
+	{
 	INJECTION_MODE im = (INJECTION_MODE)InjectionMethod;
 	DWORD Flags = 0;
 	if (Unlink)
 		Flags = INJ_UNLINK_FROM_PEB;
 	Flags |= HeaderOption;
 	DWORD Err = 0;
-	DWORD Ret = 0;
+		DWORD Ret = 0;
 
-	LOG_PRINT("Found GTA5.exe, PID: %lu\n", dwProcessId);
+		Ret = InjectDLL(cpDllFile, hProcess, im, ThreadHijacking, Flags, &Err);
 
-	while (!hWindow)
-	{
-		hWindow = FindWindow("grcWindow", NULL);
-		Sleep(100);
-	}
-
-	hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwProcessId);
-	
-	if (!hProcess)
-		BREAK_WITH_ERROR("Opening GTA5.exe for injection.");
-
-	// Check if our dll is already injected
-	if (!GetModuleInProcess(hProcess, cpDllFile))
-	{
-		InjectDLL(cpDllFile, hProcess, im, ThreadHijacking, Flags, &Err);
-		CloseHandle(hProcess);
 		if (Ret)
 		{
 			char szRet[9]{ 0 };
@@ -146,8 +147,10 @@ int main()
 			Msg += szRet;
 			Msg += "\nAdvanced info: 0x";
 			Msg += szAdv;
-			MessageBoxA(0, Msg.c_str(), "Injection failed", MB_ICONERROR);
+			MessageBox(0, Msg.c_str(), "Injection failed", MB_ICONERROR);
 		}
+
+		CloseHandle(hProcess);
 	}
 
 	return ERROR_SUCCESS;

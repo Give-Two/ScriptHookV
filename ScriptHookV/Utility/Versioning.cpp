@@ -1,6 +1,6 @@
-#include "..\..\SDK\inc\enums.h"
 #include "versioning.h"
 #pragma comment(lib,"Version.lib")
+#include "..\..\SDK\inc\enums.h"
 
 constexpr std::pair<eGameVersion, const char*> versionTable[]
 {

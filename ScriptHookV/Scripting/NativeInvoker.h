@@ -2,6 +2,7 @@
 #define __NATIVE_INVOKER_H__
 
 #include "..\ScriptHookV.h"
+#include "..\Utility\Pattern.h"
 #include "..\..\SDK\inc\types.h"
 
 struct HashMapStruct
@@ -13,6 +14,7 @@ struct HashMapStruct
 
 namespace rage
 {
+	static int64_t(*GetLocalPlayerInfo)() = "48 8B 05 ? ? ? ? 48 8B 48 08 33 C0 48 85 C9 74 07"_Scan.as<decltype(GetLocalPlayerInfo)>();
 	static int64_t(*GetEntityAddress)(int) = "83 f9 ff 74 31 4c 8b 0d ? ? ? ? 44 8b c1 49 8b 41 08"_Scan.as<decltype(GetEntityAddress)>();
 	static Entity(*AddressToEntity)(int64_t) = "48 89 5c 24 ? 48 89 74 24 ? 57 48 83 ec 20 8b 15 ? ? ? ? 48 8b f9 48 83 c1 10 33 db"_Scan.as<decltype(AddressToEntity)>();
 	static uint32_t*(*FileRegister)(uint32_t*, const char*, bool, const char*, bool) = "48 89 5C 24 ? 48 89 6C 24 ? 48 89 7C 24 ? 41 54 41 56 41 57 48 83 EC 50 48 8B EA 4C 8B FA 48 8B D9 4D 85 C9"_Scan.as<decltype(FileRegister)>();
@@ -264,10 +266,17 @@ namespace NativeInvoker
 	}
 
 	NativeHandler GetNativeHandler(HashMapStruct native);
+
+	NativeHandler GetNativeHandler(std::uint64_t hash);
 	
 	HashMapStruct NativeInfo(std::uint64_t oldHash);
 
 	extern HashMapStruct g_last_native;
 };
+
+inline NativeHandler operator""_handler(uint64_t hash)
+{
+	return  NativeInvoker::GetNativeHandler(hash);
+}
 
 #endif // __NATIVE_INVOKER_H__

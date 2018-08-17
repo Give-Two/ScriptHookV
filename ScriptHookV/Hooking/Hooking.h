@@ -2,6 +2,7 @@
 #define __HOOKING_H__
 
 #include "..\ScriptHookV.h"
+#include "..\Utility\Pattern.h"
 #include <Detours.h>
 
 namespace Hooking
@@ -23,10 +24,10 @@ namespace Hooking
 
 	public:
 		DetourHook()
-			: _original(nullptr)
-			, _detour(nullptr)
-			, _trampoline(nullptr)
-			, _name(nullptr)
+		: _original(nullptr)
+		, _detour(nullptr)
+		, _trampoline(nullptr)
+		, _name(nullptr)
 		{ }
 
 		~DetourHook()
@@ -35,7 +36,8 @@ namespace Hooking
 			{
 				UnHook();
 
-				MessageBoxA(NULL, FMT("A hook at %llX was not removed", normalise_base(_original)).c_str(), "Error", MB_OK);
+				MessageBoxA(NULL, FMT("%s Hook was not removed", _name).c_str(), "Error", MB_OK | MB_TOPMOST);
+
 			}
 		}
 
@@ -81,7 +83,6 @@ namespace Hooking
 				LOG_DEBUG("Unhooked %s at %llX", _name, normalise_base(_original));
 			}
 
-			_name = nullptr;
 			_original = nullptr;
 			_detour = nullptr;
 			_trampoline = nullptr;
@@ -101,9 +102,9 @@ namespace Hooking
 	template <typename R, typename... T>
 	class DetourHook<R(&)(T...)> : public DetourHook<R(T...)> { };
 
-	bool HookNatives();
+	bool HookFunctions();
 
-	void UnHookNatives();
+	bool UnHookFunctions();
 
 	std::uintptr_t normalise_base(mem::handle address);
 };

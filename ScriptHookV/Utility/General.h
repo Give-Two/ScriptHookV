@@ -3,6 +3,18 @@
 
 #include "..\ScriptHookV.h"
 
+#ifndef doOnce
+#define doOnce(...)			\
+    do {					\
+        static int once;	\
+        if (!once)			\
+		{					\
+            ++once;			\
+            __VA_ARGS__;	\
+        }					\
+    } while (0)
+#endif
+
 namespace Utility 
 {
 	/* String */
@@ -54,6 +66,7 @@ namespace Utility
 	/* File / Folder */
 	bool				DoesFileExist(const char* name);
 	const std::string	GetModuleFolder(HMODULE module, bool fullPath = false);
+	const std::string	GetNamedModuleFolder(const std::string& name, bool fullPath = false);
 	const std::string	GetRunningExecutableFolder();
 	const std::string	GetOurModuleFolder();
 
@@ -64,15 +77,14 @@ namespace Utility
 	const std::string	GetModuleName(const HMODULE module);
 	const std::string	GetModuleNameWithoutExtension(const HMODULE module);
 
-	DWORD				GetProcessIDByName(const std::string& processName);
+	bool				GetProcess(const std::string& filename, HANDLE& handle);
+	DWORD				GetProcessID(const std::string& processName);
 	HANDLE				StartProcessPaused(LPCTSTR lpApplicationName, PHANDLE ptr_thread);
 	void				StartProcess(LPCTSTR lpApplicationName);
-	void				CreateElevatedThread(LPTHREAD_START_ROUTINE thread);
 	void				killProcessByName(const char *filename);
-
+	bool				CreateElevatedThread(LPTHREAD_START_ROUTINE thread);
 	bool				SetPrivilege(const char * szPrivilege, bool bState = true);
 	bool				Is64BitProcess(HANDLE hProc);
-	bool				IsProcessRunning(const char *filename);
 
 	/* General Misc */
 	template <typename T>

@@ -1,14 +1,16 @@
 #include "ScriptManager.h"
+#include "ScriptEngine.h"
 #include "ScriptThread.h"
 #include "NativeInvoker.h"
-#include "..\Utility\Log.h"
-#include "..\Utility\General.h"
+#include "Pools.h"
+
 #include "..\ASI Loader\ASILoader.h"
 #include "..\Input\InputHook.h"
 #include "..\DirectX\D3d11Hook.h"
 #include "..\Hooking\Hooking.h"
-#include "Pools.h"
-	
+#include "..\..\SDK\inc\types.h"
+#include "..\..\SDK\inc\enums.h"
+
 #include <StackWalker.h>
 #pragma comment(lib, "StackWalker.lib")
 // Specialized stackwalker-output classes
@@ -229,14 +231,6 @@ void ScriptManager::MainFiber()
 	}
 }
 
-DWORD WINAPI ExitGtaVThread(LPVOID/*lpParameter*/)
-{
-	InputHook::Remove();
-	g_D3DHook.ReleaseDevices(true);
-	Hooking::UnHookNatives();
-	FreeLibraryAndExitThread(Utility::GetOurModuleHandle(), ERROR_SUCCESS);
-}
-
 void ScriptManager::UnloadHook()
 {
 	LOG_DEBUG("Exiting GTA5.exe Process");
@@ -249,7 +243,13 @@ void ScriptManager::UnloadHook()
 	{
 		CloseHandle(g_MainFiber);
 		g_HookState = HookStateUnknown;
-		Utility::CreateElevatedThread(ExitGtaVThread);
+		Utility::CreateElevatedThread([](LPVOID)->DWORD
+		{
+			InputHook::Remove();
+			g_D3DHook.ReleaseDevices(true);
+			Hooking::UnHookFunctions();
+			FreeLibraryAndExitThread(Utility::GetOurModuleHandle(), ERROR_SUCCESS);
+		});
 	}
 }
 

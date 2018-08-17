@@ -3,8 +3,6 @@
 #include "D3d11Hook.h"
 #include "..\Hooking\Hooking.h"
 #include "..\Scripting\ScriptEngine.h"
-#include "..\Utility\General.h"
-#include "..\Utility\Log.h"
 
 using namespace Hooking;
 

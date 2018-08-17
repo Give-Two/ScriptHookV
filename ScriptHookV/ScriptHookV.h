@@ -4,66 +4,45 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif //NOMINMAX
-#define _DEVBUILD
 
 #include <windows.h>
+#include <string>
+#include <sstream>
+#include <fstream>
 #include <stdio.h>
 #include <stdint.h>
-#include <string>
 #include <assert.h>
-#include <sstream>
-#include <algorithm>
 #include <memory>
+#include <algorithm>
+#include <functional>
 #include <TlHelp32.h>
-#include <fstream>
 #include <Shlwapi.h>
 
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include <array>
+#include <deque>
 #include <map>
 #include <set>
-
-#include <deque>
-#include <functional>
 
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "shlwapi.lib")
 
-#define FMT(FM, ...) \
-	(   false \
-		? std::to_string(printf(FM, ##__VA_ARGS__))  \
-		: string_format(FM, ##__VA_ARGS__ ) \
-	)
+#include "Utility\General.h"
+#include "Utility\Log.h"
 
-/* String */
-template <typename T>
-T process_arg(T value) noexcept
-{
-	return value;
-}
-
-template <typename T>
-T const * process_arg(std::basic_string<T> const & value) noexcept
-{
-	return value.c_str();
-}
-
-template<typename ... Args>
-std::string string_format(const std::string& format, Args const & ... args)
-{
+#define FMT(fmt, ...) (false ? std::to_string(printf(fmt, ##__VA_ARGS__)) : string_format(fmt, ##__VA_ARGS__ ))
+template <typename T> T process_arg(T value) noexcept { return value; }
+template <typename T> T const * process_arg(std::basic_string<T> const & value) noexcept { return value.c_str(); }
+template <typename ... Args> std::string string_format(const std::string& format, Args const & ... args) {
+	
 	const auto fmt = format.c_str();
-	const size_t size = std::snprintf(nullptr, 0, fmt, process_arg(args) ...) + 1;
+	const auto size = std::snprintf(nullptr, 0, fmt, process_arg(args) ...) + 1;
 	auto buf = std::make_unique<char[]>(size);
 	std::snprintf(buf.get(), size, fmt, process_arg(args) ...);
-	auto res = std::string(buf.get(), buf.get() + size - 1);
-	return res;
+	return std::string(buf.get(), buf.get() + size - 1);
 }
-
-#include "Utility\Log.h"
-#include "Utility\General.h"
-#include "Utility\Pattern.h"
 
 template<typename InputType, typename ReturnType>
 InputType RCast(InputType Input, ReturnType Ret)

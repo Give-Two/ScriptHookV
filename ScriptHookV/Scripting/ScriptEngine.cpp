@@ -2,12 +2,15 @@
 #include "ScriptManager.h"
 #include "NativeInvoker.h"
 #include "Pools.h"
+
 #include "..\ASI Loader\ASILoader.h"
 #include "..\Input\InputHook.h"
 #include "..\DirectX\D3d11Hook.h"
-#include "..\Utility\Log.h"
-#include "..\Utility\General.h"
 #include "..\Hooking\Hooking.h"
+
+#include "..\..\SDK\inc\types.h"
+#include "..\..\SDK\inc\enums.h"
+#include "..\..\SDK\inc\natives.h"
 
 struct GlobalTable 
 {
@@ -23,6 +26,8 @@ int				g_GameVersion;
 
 bool ScriptEngine::Initialize() 
 {
+	LOG_PRINT("Initializing...");
+
 	// init Direct3d hook
 	if (!g_D3DHook.InitializeHooks())
 	{
@@ -31,7 +36,7 @@ bool ScriptEngine::Initialize()
 	}
 
 	// kill this data snoop ( must  be done after D3D )
-	if (!Utility::IsProcessRunning("GTAVLauncher.exe"))
+	if (Utility::GetProcessID("GTAVLauncher.exe"))
 	{
 		Utility::killProcessByName("GTAVLauncher.exe");
 		LOG_DEBUG("Killed %s", "GTAVLauncher.exe");
@@ -69,11 +74,11 @@ bool ScriptEngine::Initialize()
 		return false;
 	}
 
-    while (GetGameState() != GameStatePlaying) Sleep(100);
+	while (GetGameState() != GameStatePlaying) Sleep(100);
 
-	LOG_PRINT("Performing native hooking...");
+	LOG_PRINT("Performing function hooking...");
 	
-	if (Hooking::HookNatives())
+	if (Hooking::HookFunctions())
 	{
 		ASILoader::Initialize();
 		
@@ -110,15 +115,15 @@ void ScriptEngine::Notification(const std::string& str, bool gxt)
 {
 	g_Stack.push_back([str, gxt]
 	{
-		if (gxt && NativeInvoker::invoke<bool>(/*DOES_TEXT_LABEL_EXIST*/0xAC09CA973C564252, str.c_str()))
+		if (gxt && UI::DOES_TEXT_LABEL_EXIST(str.c_str()))
 		{
-			NativeInvoker::invoke<Void>(/*_SET_NOTIFICATION_TEXT_ENTRY*/0x202709F4C58A0424, str.c_str());
+			UI::_SET_NOTIFICATION_TEXT_ENTRY(str.c_str());
 			return;
 		}
 		bool IsLongStr = str.length() < 100;
-		NativeInvoker::invoke<Void>(/*_SET_NOTIFICATION_TEXT_ENTRY*/0x202709F4C58A0424, IsLongStr ? "jamyfafi" : "STRING");
+		UI::_SET_NOTIFICATION_TEXT_ENTRY(IsLongStr ? "jamyfafi" : "STRING");
 		for (std::size_t i = 0; i < str.size(); i += 99)
-			NativeInvoker::invoke<Void>(/*ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME*/0x6C188BE134E074AA, str.c_str());
-		NativeInvoker::invoke<int>(/*_DRAW_NOTIFICATION*/0x2ED7843F8F801023, 0, 0);
+			UI::ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(str.c_str());
+		UI::_DRAW_NOTIFICATION(0, 0);
 	});
 }

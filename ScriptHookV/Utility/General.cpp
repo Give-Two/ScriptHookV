@@ -50,6 +50,19 @@ namespace Utility
 		return path;
 	}
 
+	const std::string GetNamedModuleFolder(const std::string& name, bool fullPath)
+	{
+		std::string path;
+		char* cpModulePath = new char[MAX_PATH];
+		if (GetFullPathName(name.c_str(), MAX_PATH, cpModulePath, 0))
+		{
+			if (!fullPath) PathRemoveFileSpec(cpModulePath);
+			path = cpModulePath;
+		}
+
+		return path;
+	}
+
 	const std::string GetRunningExecutableFolder() 
 	{
 		return GetModuleFolder(NULL);
@@ -95,33 +108,49 @@ namespace Utility
 		return fileNameWithExtension.substr(0, lastIndex);
 	}
 
-	DWORD GetProcessIDByName(const std::string& processName)
+	bool GetProcess(const std::string& filename, HANDLE& handle)
 	{
 		PROCESSENTRY32 processInfo;
 		processInfo.dwSize = sizeof(processInfo);
 
 		HANDLE processesSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
-		if (processesSnapshot == INVALID_HANDLE_VALUE)
-			return 0;
+		if (processesSnapshot == INVALID_HANDLE_VALUE) return false;
 
 		Process32First(processesSnapshot, &processInfo);
-		if (!processName.compare(processInfo.szExeFile))
+		if (!filename.compare(processInfo.szExeFile))
 		{
+			SetPrivilege("SeDebugPrivilege", true);
+			handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processInfo.th32ProcessID);
 			CloseHandle(processesSnapshot);
-			return processInfo.th32ProcessID;
+			return true;
 		}
 
 		while (Process32Next(processesSnapshot, &processInfo))
 		{
-			if (!processName.compare(processInfo.szExeFile))
+			if (!filename.compare(processInfo.szExeFile))
 			{
+				SetPrivilege("SeDebugPrivilege", true);
+				handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processInfo.th32ProcessID);
 				CloseHandle(processesSnapshot);
-				return processInfo.th32ProcessID;
+				return true;
 			}
 		}
 
 		CloseHandle(processesSnapshot);
-		return 0;
+		return false;
+	}
+
+	DWORD GetProcessID(const std::string& processName)
+	{
+		DWORD processID = 0;
+		HANDLE handle;
+		if (GetProcess(processName, handle))
+		{
+			processID = GetProcessId(handle);
+			CloseHandle(handle);
+		}
+
+		return processID;
 	}
 
 	void StartProcess(LPCTSTR lpApplicationName)
@@ -181,11 +210,9 @@ namespace Utility
 		return pi.hProcess;
 	}
 
-	void CreateElevatedThread(LPTHREAD_START_ROUTINE thread)
+	bool CreateElevatedThread(LPTHREAD_START_ROUTINE thread)
 	{
-		DWORD myThreadID;
-		HANDLE myHandle = CreateThread(0, 0, thread, 0, THREAD_PRIORITY_HIGHEST, &myThreadID);
-		CloseHandle(myHandle);
+		return CloseHandle(CreateThread(NULL, NULL, thread, NULL, THREAD_PRIORITY_HIGHEST, NULL)) == TRUE;
 	}
 
 	void killProcessByName(const char *filename)
@@ -252,24 +279,6 @@ namespace Utility
 		if (Is64BitWin && !Out)
 			return true;
 
-		return false;
-	}
-
-	bool IsProcessRunning(const char *filename)
-	{
-		HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, NULL);
-		PROCESSENTRY32 pEntry;
-		pEntry.dwSize = sizeof(pEntry);
-		BOOL hRes = Process32First(hSnapShot, &pEntry);
-		while (hRes)
-		{
-			if (strcmp(pEntry.szExeFile, filename) == 0)
-			{
-				return true;
-			}
-			hRes = Process32Next(hSnapShot, &pEntry);
-		}
-		CloseHandle(hSnapShot);
 		return false;
 	}
 

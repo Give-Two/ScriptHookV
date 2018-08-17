@@ -1,6 +1,4 @@
 #include "ASILoader.h"
-#include "..\Utility\Log.h"
-#include "..\Utility\General.h"
 #include "..\Utility\PEImage.h"
 
 using namespace Utility;

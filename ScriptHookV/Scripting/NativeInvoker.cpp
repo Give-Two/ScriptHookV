@@ -1,6 +1,5 @@
 #include "NativeInvoker.h"
 #include "ScriptEngine.h"
-#include "..\Utility\General.h"
 #include "..\Hooking\Hooking.h"
 
 uint64_t NativeInvoker::Helper::g_hash;
@@ -37,10 +36,20 @@ HashMapStruct NativeInvoker::NativeInfo(std::uint64_t oldHash)
 NativeHandler NativeInvoker::GetNativeHandler(HashMapStruct native)
 {
 	if (native.NewHash)
-	{
-		g_last_native = native;
-		
+	{	
         return pGetNativeHandler(NativeRegistrationTable, native.NewHash);
+	}
+
+	return nullptr;
+}
+
+NativeHandler NativeInvoker::GetNativeHandler(std::uint64_t hash)
+{
+	auto native = NativeInvoker::NativeInfo(hash);
+
+	if (native.NewHash)
+	{
+		return pGetNativeHandler(NativeRegistrationTable, native.NewHash);
 	}
 
 	return nullptr;
@@ -59,6 +68,8 @@ DECLSPEC_NOINLINE void NativeInvoker::Helper::CallNative(scrNativeCallContext *c
 			handler(cxt);
 
 			cxt->FixVectors();
+
+			g_last_native = native;
 		}
 
 		else

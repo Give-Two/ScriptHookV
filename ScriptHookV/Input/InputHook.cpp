@@ -1,5 +1,4 @@
 #include "InputHook.h"
-#include "..\Utility\Log.h"
 #include "..\Scripting\ScriptManager.h"
 
 WNDPROC	oWndProc;
