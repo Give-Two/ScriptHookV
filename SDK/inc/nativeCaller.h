@@ -6,7 +6,7 @@ template <typename T>
 static inline void nativePush(T val)
 {
 	UINT64 val64 = 0;
-	if (sizeof(T) > sizeof(UINT64))
+	if constexpr (sizeof(T) > sizeof(UINT64))
 	{
 		throw "error, value size > 64 bit";
 	}
