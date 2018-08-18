@@ -75,6 +75,10 @@ HMODULE GetModuleInProcess(HANDLE hProc, const char* moduleName)
 DWORD InjectDLL(const char * szDllFile, HANDLE hProc, INJECTION_MODE im, bool HijackThread, DWORD Postinjection, DWORD * ErrorCode)
 {
 	DWORD Ret = 0;
+
+	// Check if our dll is already injected
+	if (GetModuleInProcess(hProc, szDllFile)) return INJ_ERR_ALREADY_INJ;
+
 	switch (im)
 	{
 		case IM_LoadLibrary:

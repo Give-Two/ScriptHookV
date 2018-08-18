@@ -8,6 +8,7 @@
 #include <TlHelp32.h>
 #include <Psapi.h>
 #include "NT Stuff.h"
+#include <array>
 
 enum INJECTION_MODE
 {
@@ -24,40 +25,58 @@ enum INJECTION_MODE
 HMODULE GetModuleInProcess(HANDLE hProc, const char* moduleName);
 DWORD InjectDLL(const char * szDllFile, HANDLE hProc, INJECTION_MODE Mode, bool HijackThread = false, DWORD Postinjection = 0, DWORD * ErrorCode = nullptr);
 
-#define INJ_ERR_SUCCESS					0x00000000
-#define INJ_ERR_INVALID_PROC_HANDLE		0x00000001
-#define INJ_ERR_FILE_DOESNT_EXIST		0x00000002
-#define INJ_ERR_OUT_OF_MEMORY			0x00000003
-#define INJ_ERR_INVALID_FILE			0x00000004
-#define INJ_ERR_NO_X64FILE				0x00000005
-#define INJ_ERR_NO_X86FILE				0x00000006
-#define INJ_ERR_IMAGE_CANT_RELOC		0x00000007
-#define INJ_ERR_NTDLL_MISSING			0x00000008
-#define INJ_ERR_LDRLOADDLL_MISSING		0x00000009
-#define INJ_ERR_LDRPLOADDLL_MISSING		0x0000000A
-#define INJ_ERR_INVALID_FLAGS			0x0000000B
-#define INJ_ERR_CANT_FIND_MOD			0x0000000C
-#define INJ_ERR_CANT_FIND_MOD_PEB		0x0000000D
+#define InjectionErrors					\
+X( INJ_ERR_SUCCESS )					\
+X( INJ_ERR_INVALID_PROC_HANDLE )		\
+X( INJ_ERR_FILE_DOESNT_EXIST )			\
+X( INJ_ERR_OUT_OF_MEMORY )				\
+X( INJ_ERR_INVALID_FILE	)				\
+X( INJ_ERR_NO_X64FILE )					\
+X( INJ_ERR_NO_X86FILE )					\
+X( INJ_ERR_IMAGE_CANT_RELOC )			\
+X( INJ_ERR_NTDLL_MISSING )				\
+X( INJ_ERR_LDRLOADDLL_MISSING )			\
+X( INJ_ERR_LDRPLOADDLL_MISSING )		\
+X( INJ_ERR_INVALID_FLAGS )				\
+X( INJ_ERR_CANT_FIND_MOD )				\
+X( INJ_ERR_CANT_FIND_MOD_PEB )			\
+X( INJ_ERR_UNKNOWN )					\
+X( INJ_ERR_CANT_CREATE_THREAD )			\
+X( INJ_ERR_CANT_ALLOC_MEM )				\
+X( INJ_ERR_WPM_FAIL )					\
+X( INJ_ERR_TH32_FAIL )					\
+X( INJ_ERR_CANT_GET_PEB )				\
+X( INJ_ERR_ALREADY_INJ )
 
-#define INJ_ERR_UNKNOWN					0x80000000
-#define INJ_ERR_CANT_CREATE_THREAD		0x80000001
-#define INJ_ERR_CANT_ALLOC_MEM			0x80000002
-#define INJ_ERR_WPM_FAIL				0x80000003
-#define INJ_ERR_TH32_FAIL				0x80000004
-#define INJ_ERR_CANT_GET_PEB			0x80000005
+#define X(x) x,
+enum eInjectionErrors { InjectionErrors InjectionErrorCount };
+#undef X
 
-#define INJ_ERR_ADV_UNKNOWN				0x00000000
-#define INJ_ERR_ADV_INV_PROC			0x00000001
-#define INJ_ERR_ADV_TH32_FAIL			0x00000002
-#define INJ_ERR_ADV_NO_THREADS			0x00000003
-#define INJ_ERR_ADV_CANT_OPEN_THREAD	0x00000004
-#define INJ_ERR_ADV_SUSPEND_FAIL		0x00000005
-#define INJ_ERR_ADV_GET_CONTEXT_FAIL	0x00000006
-#define INJ_ERR_ADV_OUT_OF_MEMORY		0x00000007
-#define INJ_ERR_ADV_WPM_FAIL			0x00000008
-#define INJ_ERR_ADV_SET_CONTEXT_FAIL	0x00000009
-#define INJ_ERR_ADV_RESUME_FAIL			0x0000000A
-#define INJ_ERR_ADV_QIP_MISSING			0x0000000B
-#define INJ_ERR_ADV_QIP_FAIL			0x0000000C
+#define X(x) #x,    
+constexpr std::array<char * const, eInjectionErrors::InjectionErrorCount> eInjectionErrorNames = { InjectionErrors };
+#undef X
+
+#define InjectionAdvErrors				\
+X( INJ_ERR_ADV_UNKNOWN )				\
+X( INJ_ERR_ADV_INV_PROC )				\
+X( INJ_ERR_ADV_TH32_FAIL )				\
+X( INJ_ERR_ADV_NO_THREADS )				\
+X( INJ_ERR_ADV_CANT_OPEN_THREAD	)		\
+X( INJ_ERR_ADV_SUSPEND_FAIL )			\
+X( INJ_ERR_ADV_GET_CONTEXT_FAIL )		\
+X( INJ_ERR_ADV_OUT_OF_MEMORY )			\
+X( INJ_ERR_ADV_WPM_FAIL )				\
+X( INJ_ERR_ADV_SET_CONTEXT_FAIL )		\
+X( INJ_ERR_ADV_RESUME_FAIL )			\
+X( INJ_ERR_ADV_QIP_MISSING )			\
+X( INJ_ERR_ADV_QIP_FAIL )
+
+#define X(x) x,
+enum eInjectionAdvErrors { InjectionAdvErrors InjectionAdvErrorCount };
+#undef X
+
+#define X(x) #x,    
+constexpr std::array<char * const, eInjectionAdvErrors::InjectionAdvErrorCount> eInjectionAdvErrorNames = { InjectionAdvErrors };
+#undef X
 
 #endif

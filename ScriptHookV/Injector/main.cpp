@@ -1,7 +1,7 @@
 #include "Injection.h"
 #include "registry.h"
 
-#define BREAK_WITH_ERROR( e ) { LOG_ERROR("%s. Code=%d", e, GetLastError()); return EXIT_FAILURE; }
+#define BREAK_WITH_ERROR( fmt, ...)	Utility::GetLog()->LogToFile( Utility::eLogType::LogTypeError, FMT( fmt, ##__VA_ARGS__ ) + FMT( " Code=%d", GetLastError() ))
 
 int main()
 {
@@ -17,12 +17,10 @@ int main()
 	bool ThreadHijacking = false;
 
 	//DLL Injction methods - IM_LoadLibrary | IM_LdrLoadDll | IM_ManualMap
-	DWORD InjectionMethod = IM_LoadLibrary;
-
-	bool Unlink = false; // true = INJ_UNLINK_FROM_PEB
+	INJECTION_MODE InjectionMethod = IM_LoadLibrary;
 
 	//DLL Header Options - INJ_ERASE_HEADER | INJ_FAKE_HEADER  | INJ_UNLINK_FROM_PEB | INJ_FLAGS_ALL (All of these Options)
-	DWORD HeaderOption = NULL;
+	DWORD HeaderFlags = NULL;
 
 	// Registry entry
 	std::string sExecutablePath;
@@ -60,7 +58,7 @@ int main()
 			{
 				sExecutablePath = reg.GetValue() + "\\GTA5.exe";
 				if (!Utility::DoesFileExist(sExecutablePath.c_str()))
-					BREAK_WITH_ERROR("GTA5.exe not found");
+					BREAK_WITH_ERROR("GTA5.exe not found.");
 
 				LOG_DEBUG("Starting %s", "GTAVLauncher.exe");
 				Utility::StartProcess((reg.GetValue() + "\\GTAVLauncher.exe").c_str());
@@ -78,7 +76,7 @@ int main()
 			{
 				sExecutablePath = reg.GetValue() + "\\GTA5.exe";
 				if (!Utility::DoesFileExist(sExecutablePath.c_str()))
-					BREAK_WITH_ERROR("GTA5.exe not found");
+					BREAK_WITH_ERROR("GTA5.exe not found.");
 
 				LOG_DEBUG("Starting GTA V - steam id:271590");
 				ShellExecute(NULL, "open", "steam://run/271590", NULL, NULL, SW_SHOWNORMAL);	
@@ -94,7 +92,7 @@ int main()
 			{
 				if (!Utility::GetProcessID("GTAVLauncher.exe"))
 				{
-					BREAK_WITH_ERROR("GTAVLauncher.exe Is no longer running, aborting injection");
+					BREAK_WITH_ERROR("GTAVLauncher.exe Is no longer running, aborting injection.");
 				}
 			}
 
@@ -106,52 +104,38 @@ int main()
 
 	// Ensure we have the process open
 	if (!hProcess)
-		BREAK_WITH_ERROR(FMT("Opening %s.", exeName.c_str()).c_str());
+		BREAK_WITH_ERROR("Opening %s.", exeName.c_str());
 
 	LOG_DEBUG("Found %s, PID: %lu", exeName.c_str(), GetProcessId(hProcess));
 
 	// Get full file path
 	const char* cpDllFile = Utility::GetNamedModuleFolder(dllName, true).c_str();
 	if (!cpDllFile)
-		BREAK_WITH_ERROR(FMT("Unable to find %s to inject", dllName.c_str()).c_str());
+		BREAK_WITH_ERROR("Unable to find %s to inject", dllName.c_str());
 
 	// Wait for the window
-	HWND hWindow = NULL;
-	while (!hWindow)
+	while (GetForegroundWindow() != FindWindow("grcWindow", NULL))
 	{
 		doOnce(LOG_DEBUG("Waiting for %s window to become visible...", exeName.c_str()));
-		hWindow = FindWindowA("grcWindow", NULL);
-		Sleep(1000);
+		Sleep(100);
 	}
-
-	// Check if our dll is already injected
-	if (!GetModuleInProcess(hProcess, cpDllFile))
-	{
-	INJECTION_MODE im = (INJECTION_MODE)InjectionMethod;
-	DWORD Flags = 0;
-	if (Unlink)
-		Flags = INJ_UNLINK_FROM_PEB;
-	Flags |= HeaderOption;
+	
 	DWORD Err = 0;
-		DWORD Ret = 0;
-
-		Ret = InjectDLL(cpDllFile, hProcess, im, ThreadHijacking, Flags, &Err);
-
-		if (Ret)
-		{
-			char szRet[9]{ 0 };
-			char szAdv[9]{ 0 };
-			_ultoa_s(Ret, szRet, 0x10);
-			_ultoa_s(Err, szAdv, 0x10);
-			std::string Msg = "Error code: 0x";
-			Msg += szRet;
-			Msg += "\nAdvanced info: 0x";
-			Msg += szAdv;
-			MessageBox(0, Msg.c_str(), "Injection failed", MB_ICONERROR);
-		}
-
-		CloseHandle(hProcess);
+	auto Ret = InjectDLL(cpDllFile, hProcess, InjectionMethod, ThreadHijacking, HeaderFlags, &Err);
+	if (Ret)
+	{
+		std::string Msg = "Error code: ";
+		Msg += eInjectionErrorNames[Ret];
+		Msg += "\nAdvanced info: ";
+		Msg += eInjectionAdvErrorNames[Err];
+		MessageBox(0, Msg.c_str(), "Injection failed", MB_ICONERROR);
+	}
+	else
+	{
+		Utility::playwindowsSound("tada.wav");
 	}
 
+	CloseHandle(hProcess);
+	
 	return ERROR_SUCCESS;
 }
