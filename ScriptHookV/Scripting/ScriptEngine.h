@@ -32,8 +32,6 @@ public:
 	static eGameState GetGameState();
 
 	static uint32_t RegisterFile(const char* fullpath, const char* filename);
-
-	static void Notification(const std::string& str, bool gxt = false);
 };
 
 #endif // __SCRIPT_ENGINE_H__

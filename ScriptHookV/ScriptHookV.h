@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
+#include <time.h>
 #include <memory>
 #include <algorithm>
 #include <functional>
@@ -50,7 +51,6 @@ InputType RCast(InputType Input, ReturnType Ret)
 	return reinterpret_cast<decltype(Input)>(Ret);
 }
 
-extern std::deque<std::function<void()>> g_Stack;
 extern std::uint32_t g_ThreadHash;
 extern int g_GameVersion;
 

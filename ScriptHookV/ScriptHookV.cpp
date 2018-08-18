@@ -10,8 +10,6 @@ using namespace Utility;
 
 std::uint32_t g_ThreadHash = "main_persistent"_joaat;
 
-std::deque<std::function<void()>> g_Stack;
-
 BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/ ) 
 {
 	switch ( dwReason ) 
@@ -37,7 +35,6 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 
 			if (g_GameVersion == -1)
 			{
-				g_GameVersion = -1;
 				auto file = GetOurModuleFolder() + "\\Native_Registration.txt";
 				if (DoesFileExist(file.c_str())) remove(file.c_str());
 				LOG_FILE("Native_Registration", "%s", versionString.c_str());

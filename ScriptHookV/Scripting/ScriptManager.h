@@ -68,6 +68,7 @@ namespace ScriptManager
 	void					WndProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 	void					MainFiber();
 	void					UnloadHook();
+	void					Notification(const std::string& str);
 }
 
 extern ScriptThread	g_ScriptThread;

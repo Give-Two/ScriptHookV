@@ -110,7 +110,7 @@ void ScriptThread::AddScript( HMODULE module, void(*fn)())
 	}	
 	else
 	{
-		ScriptEngine::Notification(FMT("Loaded '%s'", moduleName.c_str()));
+		ScriptManager::Notification(FMT("Loaded '%s'", moduleName.c_str()));
 		LOG_PRINT("Registering script '%s' (0x%p)", moduleName.c_str(), fn);
 		m_scripts[module] = std::make_shared<Script>(fn);
 	}
@@ -126,7 +126,7 @@ void ScriptThread::RemoveScript(HMODULE module)
 		m_scripts.erase(module);
 		FreeLibrary(module);
 		CloseHandle(module);
-		ScriptEngine::Notification(msg);
+		ScriptManager::Notification(msg);
 		LOG_PRINT(msg.c_str());
 		script.reset();
 	}
@@ -163,93 +163,134 @@ size_t ScriptThread::ScriptCount()
 
 /* ####################### SCRIPTMANAGER #######################*/
 
-void ScriptManager::WndProc(HWND /*hwnd*/, UINT uMsg, WPARAM wParam, LPARAM lParam)
+namespace ScriptManager
 {
-	for (auto & function : g_WndProcCb) function(uMsg, wParam, lParam);
+	std::deque<std::pair<clock_t, std::string>> notification_stack;
 
-	if (uMsg == WM_KEYDOWN || uMsg == WM_KEYUP || uMsg == WM_SYSKEYDOWN || uMsg == WM_SYSKEYUP)
+	void Notification(const std::string& text)
 	{
-		for (auto & function : g_keyboardFunctions) function((DWORD)wParam, lParam & 0xFFFF, (lParam >> 16) & 0xFF, (lParam >> 24) & 1, (uMsg == WM_SYSKEYDOWN || uMsg == WM_SYSKEYUP), (lParam >> 30) & 1, (uMsg == WM_SYSKEYUP || uMsg == WM_KEYUP));
+		notification_stack.push_front({ clock() + 8000, text });
 	}
-}
 
-void ScriptManager::MainFiber()
-{
-	g_MainFiber = IsThreadAFiber() ? GetCurrentFiber() : ConvertThreadToFiber(nullptr);
-
-	if (g_MainFiber)
+	Vector2 GetResolution()
 	{
-		static scrThread* target_thread = nullptr;
+		int scr_w, scr_h;
+		rage::GET_SCREEN_RESOLUTION(&scr_w, &scr_h);
+		return Vector2((float)scr_w, (float)scr_h);
+	}
 
-		scrThread* current_thread = GetActiveThread();
+	void DrawScrText(const std::string& text, Vector2 pos, float scale, int font, const int rgba[4], bool outline, bool center)
+	{
+		rage::SET_TEXT_FONT(font);
+		rage::SET_TEXT_SCALE(scale, scale);
+		rage::SET_TEXT_COLOUR(rgba[0], rgba[1], rgba[2], rgba[3]);
+		rage::SET_TEXT_WRAP(0.f, 1.f);
+		rage::SET_TEXT_CENTRE(center);
+		if (outline) rage::SET_TEXT_OUTLINE();
 
-		// do this while script::wait
-		if (target_thread && current_thread->m_ctx.State == ThreadStateIdle)
+		rage::BEGIN_TEXT_COMMAND_DISPLAY_TEXT("CELL_EMAIL_BCON");
+		for (std::size_t i = 0; i < text.size(); i += 99)
 		{
-			if (current_thread->m_ctx.ScriptHash != g_ThreadHash)
-			{
-				SetActiveThread(target_thread);
-				g_AdditionalThread.DoRun();
-				SetActiveThread(current_thread);
-			}
-		}
-		else if (current_thread->m_ctx.State == ThreadStateRunning)
-		{
-			if (current_thread->m_ctx.ScriptHash == g_ThreadHash)
-			{
-				if (!target_thread) target_thread = current_thread;
-				g_ScriptThread.DoRun();
-			}
+			rage::ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(text.c_str() + i);
 		}
 
-		static bool RemoveAllScriptsBool = false; const uint32_t RemoveAllScriptsKey = VK_NEXT; //Page Down
-		static bool LoadAllScriptsBool = false; const uint32_t LoadAllScriptsKey = VK_PRIOR;//Page Up
-		static bool RemoveScriptHookBool = false; const uint32_t RemoveScriptHookKey = VK_END;
+		rage::END_TEXT_COMMAND_DISPLAY_TEXT(pos.x, pos.y, 0);
+	}
 
-		if (isKeyPressedOnce(RemoveAllScriptsBool, RemoveAllScriptsKey))
-		{
-			g_AdditionalThread.RemoveAllScripts();
-			g_ScriptThread.RemoveAllScripts();
-		}
+	void WndProc(HWND /*hwnd*/, UINT uMsg, WPARAM wParam, LPARAM lParam)
+	{
+		for (auto & function : g_WndProcCb) function(uMsg, wParam, lParam);
 
-		if (isKeyPressedOnce(LoadAllScriptsBool, LoadAllScriptsKey))
+		if (uMsg == WM_KEYDOWN || uMsg == WM_KEYUP || uMsg == WM_SYSKEYDOWN || uMsg == WM_SYSKEYUP)
 		{
-			if (!g_ScriptThread.ScriptCount())
-				ASILoader::Initialize();
-		}
-
-		if (isKeyPressedOnce(RemoveScriptHookBool, RemoveScriptHookKey))
-		{
-			g_HookState = HookStateExiting;
-		}
-
-		while (!g_Stack.empty())
-		{
-			g_Stack.front();
-			g_Stack.pop_front();
+			for (auto & function : g_keyboardFunctions) function((DWORD)wParam, lParam & 0xFFFF, (lParam >> 16) & 0xFF, (lParam >> 24) & 1, (uMsg == WM_SYSKEYDOWN || uMsg == WM_SYSKEYUP), (lParam >> 30) & 1, (uMsg == WM_SYSKEYUP || uMsg == WM_KEYUP));
 		}
 	}
-}
 
-void ScriptManager::UnloadHook()
-{
-	LOG_DEBUG("Exiting GTA5.exe Process");
-
-	g_AdditionalThread.RemoveAllScripts();
-
-	g_ScriptThread.RemoveAllScripts();
-
-	if (ConvertFiberToThread())
+	void MainFiber()
 	{
-		CloseHandle(g_MainFiber);
-		g_HookState = HookStateUnknown;
-		Utility::CreateElevatedThread([](LPVOID)->DWORD
+		g_MainFiber = IsThreadAFiber() ? GetCurrentFiber() : ConvertThreadToFiber(nullptr);
+
+		if (g_MainFiber)
 		{
-			InputHook::Remove();
-			g_D3DHook.ReleaseDevices(true);
-			Hooking::UnHookFunctions();
-			FreeLibraryAndExitThread(Utility::GetOurModuleHandle(), ERROR_SUCCESS);
-		});
+			static scrThread* target_thread = nullptr;
+
+			scrThread* current_thread = GetActiveThread();
+
+			// do this while script::wait
+			if (target_thread && current_thread->m_ctx.State == ThreadStateIdle)
+			{
+				if (current_thread->m_ctx.ScriptHash != g_ThreadHash)
+				{
+					SetActiveThread(target_thread);
+					g_AdditionalThread.DoRun();
+					SetActiveThread(current_thread);
+				}
+			}
+			else if (current_thread->m_ctx.State == ThreadStateRunning)
+			{
+				if (current_thread->m_ctx.ScriptHash == g_ThreadHash)
+				{
+					if (!target_thread) target_thread = current_thread;
+					g_ScriptThread.DoRun();
+				}
+
+				// Notifications
+				while (!notification_stack.empty() && (notification_stack.back().first < clock())) { notification_stack.pop_back(); }
+
+				for (const auto& pair : notification_stack)
+				{
+					const auto res = GetResolution();
+					const int Color[4] = { 255, 255, 255, 255 };
+					auto mBottomPos = Vector2((res.x / 2) / res.x, (res.y / res.y) - 0.049f);
+					DrawScrText(pair.second, mBottomPos, 0.33f, 0, Color, true, true); mBottomPos.y -= 0.03f;
+
+				}
+			}
+
+			static bool RemoveAllScriptsBool = false; const uint32_t RemoveAllScriptsKey = VK_NEXT; //Page Down
+			static bool LoadAllScriptsBool = false; const uint32_t LoadAllScriptsKey = VK_PRIOR;//Page Up
+			static bool RemoveScriptHookBool = false; const uint32_t RemoveScriptHookKey = VK_END;
+
+			if (isKeyPressedOnce(RemoveAllScriptsBool, RemoveAllScriptsKey))
+			{
+				g_AdditionalThread.RemoveAllScripts();
+				g_ScriptThread.RemoveAllScripts();
+			}
+
+			if (isKeyPressedOnce(LoadAllScriptsBool, LoadAllScriptsKey))
+			{
+				if (!g_ScriptThread.ScriptCount())
+					ASILoader::Initialize();
+			}
+
+			if (isKeyPressedOnce(RemoveScriptHookBool, RemoveScriptHookKey))
+			{
+				g_HookState = HookStateExiting;
+			}
+		}
+	}
+
+	void UnloadHook()
+	{
+		LOG_DEBUG("Exiting GTA5.exe Process");
+
+		g_AdditionalThread.RemoveAllScripts();
+
+		g_ScriptThread.RemoveAllScripts();
+
+		if (ConvertFiberToThread())
+		{
+			CloseHandle(g_MainFiber);
+			g_HookState = HookStateUnknown;
+			Utility::CreateElevatedThread([](LPVOID)->DWORD
+			{
+				InputHook::Remove();
+				g_D3DHook.ReleaseDevices(true);
+				Hooking::UnHookFunctions();
+				FreeLibraryAndExitThread(Utility::GetOurModuleHandle(), ERROR_SUCCESS);
+			});
+		}
 	}
 }
 

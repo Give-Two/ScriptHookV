@@ -106,7 +106,7 @@ namespace Hooking
 
 	bool UnHookFunctions();
 
-	std::uintptr_t normalise_base(mem::handle address);
+	std::uintptr_t normalise_base(mem::handle address, const std::uintptr_t& offset = 0x140000000);
 };
 
 #endif // __HOOKING_H__

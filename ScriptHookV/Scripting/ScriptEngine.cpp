@@ -8,9 +8,7 @@
 #include "..\DirectX\D3d11Hook.h"
 #include "..\Hooking\Hooking.h"
 
-#include "..\..\SDK\inc\types.h"
 #include "..\..\SDK\inc\enums.h"
-#include "..\..\SDK\inc\natives.h"
 
 struct GlobalTable 
 {
@@ -109,21 +107,4 @@ uint32_t ScriptEngine::RegisterFile(const char* fullpath, const char* filename)
 	uint32_t index;
 	rage::FileRegister(&index, fullpath, true, filename, false);
 	return index;
-}
-
-void ScriptEngine::Notification(const std::string& str, bool gxt)
-{
-	g_Stack.push_back([str, gxt]
-	{
-		if (gxt && UI::DOES_TEXT_LABEL_EXIST(str.c_str()))
-		{
-			UI::_SET_NOTIFICATION_TEXT_ENTRY(str.c_str());
-			return;
-		}
-		bool IsLongStr = str.length() < 100;
-		UI::_SET_NOTIFICATION_TEXT_ENTRY(IsLongStr ? "jamyfafi" : "STRING");
-		for (std::size_t i = 0; i < str.size(); i += 99)
-			UI::ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(str.c_str());
-		UI::_DRAW_NOTIFICATION(0, 0);
-	});
 }

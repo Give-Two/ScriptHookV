@@ -1,81 +1,51 @@
 #include "NativeInvoker.h"
 #include "ScriptEngine.h"
 #include "..\Hooking\Hooking.h"
+#include <array>
 
 uint64_t NativeInvoker::Helper::g_hash;
-HashMapStruct NativeInvoker::g_last_native;
 NativeArgStack NativeInvoker::Helper::g_Args;
 NativeReturnStack NativeInvoker::Helper::g_Returns;
 scrNativeCallContext NativeInvoker::Helper::g_context(&NativeInvoker::Helper::g_Returns, &NativeInvoker::Helper::g_Args);
 
+void(*scrNativeCallContext::SetVectorResults)(scrNativeCallContext*) = "83 79 18 00 48 8B D1 74 4A FF 4A 18"_Scan.as<decltype(SetVectorResults)>();
 void* NativeRegistrationTable = "48 8D 0D ? ? ? ? 48 8B 14 FA E8 ? ? ? ?"_Scan.add(3).rip(4).as<decltype(NativeRegistrationTable)>();
 NativeHandler(*pGetNativeHandler)(void*, uint64_t hash) = "48 8D 0D ? ? ? ? 48 8B 14 FA E8 ? ? ? ?"_Scan.add(12).rip(4).as<decltype(pGetNativeHandler)>();
 
-void(*scrNativeCallContext::SetVectorResults)(scrNativeCallContext *) = "83 79 18 00 48 8B D1 74 4A FF 4A 18"_Scan.as<decltype(SetVectorResults)>();
-
-static const std::unordered_map<std::uint64_t, HashMapStruct> HashMap
+const std::unordered_map<uint64_t, HashMapStruct> HashMap
 {
 #define X(Name, OldHash, NewHash) { OldHash, { #Name, OldHash, NewHash } },
 #include "HashMapData.h"
 #undef X
 };
 
-HashMapStruct NativeInvoker::NativeInfo(std::uint64_t oldHash)
+HashMapStruct NativeInvoker::GetNativeTuple(uint64_t hash)
 {
-	auto findOldHash = HashMap.find(oldHash);
-	if (findOldHash != HashMap.end())
-	{	
-		return findOldHash->second;
-	}
-	
-	LOG_ERROR("Failed to find native 0x%016llX", oldHash);
-
-	return { "", oldHash, 0 };
+	HashMapStruct tuple;
+	return Utility::GetMapValue(HashMap, hash, tuple) ? tuple : HashMapStruct();
 }
 
-NativeHandler NativeInvoker::GetNativeHandler(HashMapStruct native)
+NativeHandler NativeInvoker::GetNativeHandler(uint64_t hash)
 {
-	if (native.NewHash)
-	{	
-        return pGetNativeHandler(NativeRegistrationTable, native.NewHash);
-	}
-
-	return nullptr;
-}
-
-NativeHandler NativeInvoker::GetNativeHandler(std::uint64_t hash)
-{
-	auto native = NativeInvoker::NativeInfo(hash);
-
-	if (native.NewHash)
-	{
-		return pGetNativeHandler(NativeRegistrationTable, native.NewHash);
-	}
-
-	return nullptr;
+	auto newHash = std::get<Hash_New>(GetNativeTuple(hash));
+	return newHash ? pGetNativeHandler(NativeRegistrationTable, newHash) : nullptr;
 }
 
 DECLSPEC_NOINLINE void NativeInvoker::Helper::CallNative(scrNativeCallContext *cxt, uint64_t hash)
 {
-	auto native = NativeInfo(hash);
-
-	if (native.NewHash)
+	if (auto handler = GetNativeHandler(hash))
 	{
-		auto handler = NativeInvoker::GetNativeHandler(native);
+		handler(cxt);
 
-		if (handler)
-		{
-			handler(cxt);
-
-			cxt->FixVectors();
-
-			g_last_native = native;
-		}
-
-		else
+		cxt->FixVectors();
+	}
+	else
+	{
+		static std::vector<uint64_t> failed;
+		if (!Utility::DoesVectorContain(failed, hash))
 		{
 			LOG_ERROR("Failed to find native handler for 0x%016llX", hash);
-			return;
+			failed.push_back(hash);
 		}
 	}
 }

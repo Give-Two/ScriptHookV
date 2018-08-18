@@ -115,6 +115,18 @@ namespace Utility
 		return false;
 	}
 
+	template<class T1, class T2>
+	bool GetMapValue(const std::unordered_map<T1, T2>& input, T1 key, T2& out)
+	{
+		auto foundIter = input.find(key);
+		if (foundIter != input.end())
+		{
+			out = foundIter->second;
+			return true;
+		}
+		return false;
+	}
+
 	void playwindowsSound(const char* sound);
 }
 

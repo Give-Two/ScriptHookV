@@ -1,5 +1,4 @@
 #include "Log.h"
-#include <time.h>
 
 const std::string fileName = "ScriptHookV";
 
