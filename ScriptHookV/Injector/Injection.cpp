@@ -76,9 +76,6 @@ DWORD InjectDLL(const char * szDllFile, HANDLE hProc, INJECTION_MODE im, bool Hi
 {
 	DWORD Ret = 0;
 
-	// Check if our dll is already injected
-	if (GetModuleInProcess(hProc, szDllFile)) return INJ_ERR_ALREADY_INJ;
-
 	switch (im)
 	{
 		case IM_LoadLibrary:
@@ -108,6 +105,9 @@ DWORD Inject(const char * szDllFile, HANDLE hProc, bool HijackThread)
 		return INJ_ERR_INVALID_PROC_HANDLE;
 	if (!szDllFile || !FileExistsA(szDllFile))
 		return INJ_ERR_FILE_DOESNT_EXIST;
+	// Check if our dll is already injected
+	if (GetModuleInProcess(hProc, szDllFile)) 
+		return INJ_ERR_ALREADY_INJ;
 
 	auto Len = lstrlenA(szDllFile);
 

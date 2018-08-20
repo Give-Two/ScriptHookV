@@ -119,6 +119,8 @@ int main()
 		doOnce(LOG_DEBUG("Waiting for %s window to become visible...", exeName.c_str()));
 		Sleep(100);
 	}
+
+	Sleep(2000); //Seems to need a sleep here sometimes else errors
 	
 	DWORD Err = 0;
 	auto Ret = InjectDLL(cpDllFile, hProcess, InjectionMethod, ThreadHijacking, HeaderFlags, &Err);
@@ -129,10 +131,6 @@ int main()
 		Msg += "\nAdvanced info: ";
 		Msg += eInjectionAdvErrorNames[Err];
 		MessageBox(0, Msg.c_str(), "Injection failed", MB_ICONERROR);
-	}
-	else
-	{
-		Utility::playwindowsSound("tada.wav");
 	}
 
 	CloseHandle(hProcess);
