@@ -21,6 +21,7 @@ GlobalTable		globalTable;
 eGameState *	gameState;
 eHookState		g_HookState;
 int				g_GameVersion;
+bool			g_IsRetail;
 
 bool ScriptEngine::Initialize() 
 {

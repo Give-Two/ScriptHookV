@@ -5,8 +5,8 @@
 #include "..\Utility\Pattern.h"
 #include "..\..\SDK\inc\types.h"
 
-enum HashMapEnum { Hash_Name, Hash_Old, Hash_New };
-using HashMapStruct = std::tuple<const char*, uint64_t, uint64_t>;
+enum HashMapIndice : std::size_t { HMT_NEW, HMT_OFF, HMT_NME, HMT_VER };
+using HashMapTuple = std::tuple<uint64_t, uint32_t, const char*, int32_t>;
 
 template <uint32_t stackSize> class NativeStack 
 {
@@ -165,9 +165,12 @@ namespace NativeInvoker
 		extern NativeReturnStack g_Returns;
 		extern DECLSPEC_NOINLINE void CallNative(scrNativeCallContext *cxt, std::uint64_t hash);
 	}
-
+	
 	NativeHandler GetNativeHandler(uint64_t hash);
-	HashMapStruct GetNativeTuple(uint64_t hash);
+	
+	HashMapTuple GetNativeTuple(uint64_t hash);
+
+	void DumpNativeList();
 
 	// <Local Invoker>
 	template <typename T, typename... TArgs> struct NativeArgument
@@ -238,7 +241,7 @@ inline NativeHandler operator""_handler(uint64_t hash)
 	return  NativeInvoker::GetNativeHandler(hash);
 }
 
-inline HashMapStruct operator""_info(uint64_t hash)
+inline HashMapTuple operator""_info(uint64_t hash)
 {
 	return  NativeInvoker::GetNativeTuple(hash);
 }

@@ -57,13 +57,9 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID /*lpvReserved*/
 			}
 			else
 			{
-				if (!DoesFileExist((gta5directory + "\\steam_api64.dll").c_str()))
-				{
-					g_GameVersion += 1;
-				}
-
+				if (g_IsRetail = !DoesFileExist((gta5directory + "\\steam_api64.dll").c_str())) g_GameVersion += 1;
 				LOG_DEBUG("found GTA5 directory %s", gta5directory.c_str());
-				LOG_DEBUG("detected GTA5 version %s (SHV patch %d)", versionString.c_str(), g_GameVersion);
+				LOG_DEBUG("detected GTA5 %s Version %s (SHV patch %d)", g_IsRetail ? "Retail" : "Steam", versionString.c_str(), g_GameVersion);
 
 				// incompatible with versions prior to 1.0.1493.0 with current hashmap.
 				if (g_GameVersion < VER_1_0_1493_0_STEAM)

@@ -53,5 +53,6 @@ InputType RCast(InputType Input, ReturnType Ret)
 
 extern std::uint32_t g_ThreadHash;
 extern int g_GameVersion;
+extern bool g_IsRetail;
 
 #endif // __SCRIPT_HOOK__

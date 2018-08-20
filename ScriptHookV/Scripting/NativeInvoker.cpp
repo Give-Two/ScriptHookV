@@ -12,23 +12,56 @@ void(*scrNativeCallContext::SetVectorResults)(scrNativeCallContext*) = "83 79 18
 void* NativeRegistrationTable = "48 8D 0D ? ? ? ? 48 8B 14 FA E8 ? ? ? ?"_Scan.add(3).rip(4).as<decltype(NativeRegistrationTable)>();
 NativeHandler(*pGetNativeHandler)(void*, uint64_t hash) = "48 8D 0D ? ? ? ? 48 8B 14 FA E8 ? ? ? ?"_Scan.add(12).rip(4).as<decltype(pGetNativeHandler)>();
 
-const std::unordered_map<uint64_t, HashMapStruct> HashMap
+const std::unordered_map<uint64_t, HashMapTuple> mHashMapTuple
 {
-#define X(Name, OldHash, NewHash) { OldHash, { #Name, OldHash, NewHash } },
+#define X(OldHash, NewHash, Offset, Name, Version) { OldHash, std::make_tuple( NewHash, Offset, #Name, Version ) },
 #include "HashMapData.h"
 #undef X
 };
 
-HashMapStruct NativeInvoker::GetNativeTuple(uint64_t hash)
+HashMapTuple NativeInvoker::GetNativeTuple(uint64_t hash)
 {
-	HashMapStruct tuple;
-	return Utility::GetMapValue(HashMap, hash, tuple) ? tuple : HashMapStruct();
+	HashMapTuple tuple;
+	return Utility::GetMapValue(mHashMapTuple, hash, tuple) ? tuple : HashMapTuple();
 }
 
 NativeHandler NativeInvoker::GetNativeHandler(uint64_t hash)
 {
-	auto newHash = std::get<Hash_New>(GetNativeTuple(hash));
-	return newHash ? pGetNativeHandler(NativeRegistrationTable, newHash) : nullptr;
+	HashMapTuple tuple = NativeInvoker::GetNativeTuple(hash);
+
+	if (g_IsRetail)
+	{
+		// Direct to handler without accessing the NativeRegistrationTable
+		if (auto offSet = std::get<HashMapIndice::HMT_OFF>(tuple))
+		{
+			return mem::module::main().base().add(offSet).as<NativeHandler>();
+		}
+	}
+
+	if (auto newHash = std::get<HashMapIndice::HMT_NEW>(tuple))
+	{
+		return pGetNativeHandler(NativeRegistrationTable, newHash);
+	}
+
+	return nullptr;
+}
+
+void NativeInvoker::DumpNativeList()
+{
+	for (const auto& map : mHashMapTuple)
+	{
+		HashMapTuple tuple = NativeInvoker::GetNativeTuple(map.first);
+
+	//	auto pair = map.second;
+	//	auto hashOld = map.first;
+	//	auto hashNew = std::get<HashMapIndice::HMT_NEW>(tuple);
+		auto name = std::get<HashMapIndice::HMT_NME>(tuple);
+		auto offset = std::get<HashMapIndice::HMT_OFF>(tuple);
+	//	auto offset = Hooking::normalise_base((void*)pGetNativeHandler(NativeRegistrationTable, hashNew), 0);
+	//	auto vers = pair.second;
+	//	LOG_FILE("Natives", "X(0x%016llX, 0x%016llX, 0x%08llX, %s, %d)", hashOld, hashNew, offset, name, vers);
+		LOG_FILE("IDA-python", "['%s', 0x%x],", name, offset);
+	}
 }
 
 DECLSPEC_NOINLINE void NativeInvoker::Helper::CallNative(scrNativeCallContext *cxt, uint64_t hash)
