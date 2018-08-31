@@ -105,6 +105,13 @@ DWORD Inject(const char * szDllFile, HANDLE hProc, bool HijackThread)
 		return INJ_ERR_INVALID_PROC_HANDLE;
 	if (!szDllFile || !FileExistsA(szDllFile))
 		return INJ_ERR_FILE_DOESNT_EXIST;
+
+	// Wait for the window
+	while (GetForegroundWindow() != FindWindow("grcWindow", NULL))
+	{
+		Sleep(1000);
+	}
+	
 	// Check if our dll is already injected
 	if (GetModuleInProcess(hProc, szDllFile)) 
 		return INJ_ERR_ALREADY_INJ;

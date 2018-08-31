@@ -112,15 +112,6 @@ int main()
 	const char* cpDllFile = Utility::GetNamedModuleFolder(dllName, true).c_str();
 	if (!cpDllFile)
 		BREAK_WITH_ERROR("Unable to find %s to inject", dllName.c_str());
-
-	// Wait for the window
-	while (GetForegroundWindow() != FindWindow("grcWindow", NULL))
-	{
-		doOnce(LOG_DEBUG("Waiting for %s window to become visible...", exeName.c_str()));
-		Sleep(100);
-	}
-
-	Sleep(2000); //Seems to need a sleep here sometimes else errors
 	
 	DWORD Err = 0;
 	auto Ret = InjectDLL(cpDllFile, hProcess, InjectionMethod, ThreadHijacking, HeaderFlags, &Err);
