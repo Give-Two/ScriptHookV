@@ -46,39 +46,12 @@ struct Vector2
 	{ }
 };
 
-struct Vector3_t
-{
-	float x;
-	float y;
-	float z;
-
-	Vector3_t()
-		: x(0.f)
-		, y(0.f)
-		, z(0.f)
-	{ }
-
-	Vector3_t(float x, float y, float z)
-		: x(x)
-		, y(y)
-		, z(z)
-	{ }
-};
-
 struct Vector3
 {
 public:
-	float x;
-private:
-	DWORD padX;
-public:
-	float y;
-private:
-	DWORD padY;
-public:
-	float z;
-private:
-	DWORD padZ;
+	alignas(8) float x;
+	alignas(8) float y;
+	alignas(8) float z;
 
 public:
 	Vector3()
@@ -91,6 +64,12 @@ public:
 		: x(x)
 		, y(y)
 		, z(z)
+	{ }
+
+	Vector3(float arr[3]) 
+		: x(arr[0])
+		, y(arr[1])
+		, z(arr[2])
 	{ }
 };
 
