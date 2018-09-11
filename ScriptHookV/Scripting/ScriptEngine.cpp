@@ -103,9 +103,15 @@ PUINT64 ScriptEngine::getGlobal(int globalId)
 	return reinterpret_cast<PUINT64>(globalTable.AddressOf(globalId));
 }
 
-uint32_t ScriptEngine::RegisterFile(const char* fullpath, const char* filename)
+int ScriptEngine::RegisterFile(const std::string& fullPath, const std::string& fileName)
 {
-	uint32_t index;
-	rage::FileRegister(&index, fullpath, true, filename, false);
-	return index;
+	int textureID = -1;
+	if (rage::FileRegister(&textureID, fullPath.c_str(), true, fileName.c_str(), false))
+	{
+		LOG_DEBUG("Registered File %s with ID:%i", fullPath.c_str(), textureID);
+		return textureID;
+	}
+
+	LOG_ERROR("Failed to register %s", fullPath.c_str());
+	return 0;
 }

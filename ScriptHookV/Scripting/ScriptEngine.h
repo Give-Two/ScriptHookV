@@ -30,8 +30,8 @@ public:
 	static PUINT64 getGlobal(int globalId);
 
 	static eGameState GetGameState();
-
-	static uint32_t RegisterFile(const char* fullpath, const char* filename);
+	
+	static int RegisterFile(const std::string& fullPath, const std::string& fileName);
 };
 
 #endif // __SCRIPT_ENGINE_H__

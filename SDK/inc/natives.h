@@ -14224,7 +14224,7 @@ namespace PED
 																																		   //         int skinFirst, skinSecond, skinThird;
 																																		   //    float shapeMix, skinMix, thirdMix;
 																																		   // } headBlendData;
-	static bool _GET_PED_HEAD_BLEND_DATA(Ped ped, Any* headBlendData) { return invoke<bool>(0x2746BD9D88C5C5D0, ped, headBlendData); } // 0x2746BD9D88C5C5D0 b323
+	static bool _GET_PED_HEAD_BLEND_DATA(Ped ped, int* headBlendData) { return invoke<bool>(0x2746BD9D88C5C5D0, ped, headBlendData); } // 0x2746BD9D88C5C5D0 b323
 
 																																			  // Type equals 0 for male non-dlc, 1 for female non-dlc, 2 for male dlc, and 3 for female dlc.
 																																			  //

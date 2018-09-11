@@ -1,6 +1,7 @@
 #pragma once
 
 #include <windows.h>
+#include <string>
 
 #define IMPORT __declspec(dllimport)
 
@@ -55,4 +56,4 @@ IMPORT int getGameVersion();
 
 /* misc */
 IMPORT BYTE *getScriptHandleBaseAddress(int handle);
-IMPORT UINT32 registerRawStreamingFile(const char* fileName, const char* registerAs, bool errorIfFailed);
+IMPORT int registerRawStreamingFile(const std::string& fileName, const std::string& registerAs);

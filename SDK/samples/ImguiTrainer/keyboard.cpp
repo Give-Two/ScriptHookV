@@ -15,7 +15,6 @@ struct {
 	BOOL isUpNow;
 } keyStates[KEYS_SIZE];
 
-//extern LRESULT ImGui_ImplDX11_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void OnKeyboardMessage(DWORD key, WORD repeats, BYTE scanCode, BOOL isExtended, BOOL isWithAlt, BOOL wasDownBefore, BOOL isUpNow)
 {
 	if (key < KEYS_SIZE)

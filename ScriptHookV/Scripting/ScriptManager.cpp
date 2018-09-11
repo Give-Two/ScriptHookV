@@ -88,8 +88,9 @@ void Script::Run()
 
 void Script::Wait( uint32_t time ) 
 {
-    wakeAt = timeGetTime() + time;
-	if (g_MainFiber) SwitchToFiber(g_MainFiber);
+	if (g_MainFiber && GetCurrentFiber() != g_MainFiber) 
+		SwitchToFiber(g_MainFiber);
+	wakeAt = timeGetTime() + time;
 }
 
 void ScriptThread::DoRun() 
@@ -128,7 +129,7 @@ void ScriptThread::RemoveScript(HMODULE module)
 		CloseHandle(module);
 		ScriptManager::Notification(msg);
 		LOG_PRINT(msg.c_str());
-		script.reset();
+		//script.reset();
 	}
 }
 
@@ -165,6 +166,22 @@ size_t ScriptThread::ScriptCount()
 
 namespace ScriptManager
 {
+	bool isKeyPressedOnce(bool& bIsPressed, DWORD vk)
+	{
+		if (KeyStateDown(vk))
+		{
+			if (bIsPressed == false)
+			{
+				bIsPressed = true;
+				return true;
+			}
+		}
+		else if (bIsPressed == true)
+		{
+			bIsPressed = false;
+		}
+		return false;
+	}
 	std::deque<std::pair<clock_t, std::string>> notification_stack;
 
 	void Notification(const std::string& text)
@@ -236,15 +253,14 @@ namespace ScriptManager
 				}
 
 				// Notifications
+				const auto res = GetResolution();
+				auto mBottomPos = Vector2((res.x / 2) / res.x, (res.y / res.y) - 0.049f);
 				while (!notification_stack.empty() && (notification_stack.back().first < clock())) { notification_stack.pop_back(); }
-
-				for (const auto& pair : notification_stack)
+				for (const auto& pair : notification_stack) 
 				{
-					const auto res = GetResolution();
 					const int Color[4] = { 255, 255, 255, 255 };
-					auto mBottomPos = Vector2((res.x / 2) / res.x, (res.y / res.y) - 0.049f);
-					DrawScrText(pair.second, mBottomPos, 0.33f, 0, Color, true, true); mBottomPos.y -= 0.03f;
-
+					DrawScrText(pair.second, mBottomPos, 0.33f, 0, Color, true, true); 
+					mBottomPos.y -= 0.03f;
 				}
 			}
 
@@ -275,9 +291,9 @@ namespace ScriptManager
 	{
 		LOG_DEBUG("Exiting GTA5.exe Process");
 
-		g_AdditionalThread.RemoveAllScripts();
+		if (g_AdditionalThread.ScriptCount()) g_AdditionalThread.RemoveAllScripts();
 
-		g_ScriptThread.RemoveAllScripts();
+		if (g_ScriptThread.ScriptCount()) g_ScriptThread.RemoveAllScripts();
 
 		if (ConvertFiberToThread())
 		{
@@ -379,7 +395,6 @@ DLL_EXPORT void scriptUnregister(void(*function)())
 DLL_EXPORT void nativeInit(UINT64 hash) 
 {
 	g_hash = hash;
-
 	g_context.Reset();
 }
 
@@ -433,10 +448,9 @@ DLL_EXPORT BYTE* getScriptHandleBaseAddress(int handle)
     return (BYTE*)rage::GetEntityAddress(handle);
 }
 
-DLL_EXPORT UINT32 registerRawStreamingFile(const char* fileName, const char* registerAs, bool errorIfFailed)
+DLL_EXPORT int registerRawStreamingFile(const std::string& fileName, const std::string& registerAs)
 {
-	UINT32 textureID;
-	return rage::FileRegister(&textureID, fileName, true, registerAs, errorIfFailed) ? textureID : 0;
+	return ScriptEngine::RegisterFile(fileName, registerAs);
 }
 
 
