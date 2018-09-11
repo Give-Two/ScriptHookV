@@ -33,8 +33,3 @@ void InputHook::Remove()
 	LOG_DEBUG("Removed input hook");
 }
 
-bool isKeyPressedOnce(bool& bIsPressed, DWORD vk)
-{
-	return KeyStateDown(vk) ? bIsPressed ? bIsPressed = false : bIsPressed = true : false;
-}
-
